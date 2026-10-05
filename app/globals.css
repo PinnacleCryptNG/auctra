@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
-/* PRD §14 brand tokens. */
+/*
+ * Auctra design tokens (PRD §14). See docs/DESIGN.md.
+ * Core palette is fixed; the "-ink" shades are darker versions of the same
+ * hues, used only for text and icons on light surfaces so they meet WCAG AA.
+ */
 @theme {
+  /* Core palette */
   --color-obsidian: #0b0d0f;
   --color-signal: #35d07f;
   --color-amber: #f2b84b;
@@ -9,24 +14,144 @@
   --color-cloud: #f5f6f4;
   --color-slate: #667078;
   --color-line: #dce1de;
-  --color-surface: #13161a;
-  --color-surface-2: #1a1e23;
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
-  --radius-button: 8px;
+
+  /* Derived (same hues) */
+  --color-surface: #ffffff;
+  --color-ink: #0b0d0f;
+  --color-ink-2: #3a4146;
+  --color-signal-ink: #157a46;
+  --color-signal-soft: #e6f8ee;
+  --color-amber-ink: #8a5a00;
+  --color-amber-soft: #fdf4e2;
+  --color-danger-ink: #b42f2f;
+  --color-danger-soft: #fdecec;
+  --color-slate-soft: #eceeec;
+  --color-obsidian-2: #15181b;
+  --color-obsidian-line: #262b30;
+
+  /* Type */
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Geometry */
+  --radius-control: 8px;
+  --radius-input: 10px;
   --radius-card: 12px;
   --radius-surface: 16px;
+
+  --shadow-card: 0 1px 2px rgb(11 13 15 / 0.04);
+  --shadow-overlay: 0 12px 40px rgb(11 13 15 / 0.18);
+
+  --animate-enter: enter 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet: sheet 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-spin: spin 800ms linear infinite;
 }
 
-html,
-body {
-  min-height: 100%;
+@keyframes enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sheet {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
 
-body {
-  margin: 0;
-  background: var(--color-obsidian);
-  color: var(--color-cloud);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+/* Type scale: one utility per role (docs/DESIGN.md). */
+@utility text-display {
+  font-size: clamp(2.125rem, 1.4rem + 3.2vw, 4rem);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+@utility text-h1 {
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+@utility text-h2 {
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+@utility text-h3 {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+@utility text-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+@utility text-secondary {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-slate);
+}
+@utility text-meta {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-slate);
+}
+@utility text-data {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+@utility text-amount {
+  font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-cloud);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  * {
+    box-sizing: border-box;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-obsidian);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-signal-soft);
+  }
+  [hidden] {
+    display: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+  }
 }

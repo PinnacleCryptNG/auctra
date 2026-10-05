@@ -101,6 +101,17 @@ describe("automations", () => {
     expect(prepared.summary).toContain("Memo: INV-7");
     expect(prepared.summary).toContain("Acme Labs (business)");
     expect(prepared.summary).toContain("Monad Testnet");
+    expect(prepared.preview).toMatchObject({
+      amount: "20",
+      destination: { label: "Savings wallet", category: "SAVINGS" },
+      schedule: { frequency: "WEEKLY", dayOfWeek: "FRIDAY", time: "18:00" },
+      timezone: "Africa/Lagos",
+      firstRunAt: "2026-10-09T17:00:00.000Z",
+      condition: null,
+      memo: "INV-7",
+      network: "Monad Testnet",
+      chainId: 10143
+    });
 
     const automation = await activateAutomation(db, ctx, prepared.confirmationId, NOW);
     expect(automation.status).toBe("ACTIVE");

@@ -1,40 +1,91 @@
 "use client";
 
 import { usePrivy, useSigners } from "@privy-io/react-auth";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { AddDestination } from "@/components/add-destination";
-import { Button, Card, Input, Label, Mono, Notice, TestnetBadge } from "@/components/ui";
-import { useApi, type Destination, type Me } from "@/lib/client/api";
+import { DestinationForm } from "@/components/auctra/destination-form";
+import { StatusScreen } from "@/components/auctra/status-screen";
+import { Logo } from "@/components/auctra/logo";
+import {
+  Address,
+  Button,
+  ButtonLink,
+  Card,
+  ErrorState,
+  Field,
+  IconCheck,
+  IconShield,
+  Input,
+  LoadingState,
+  Notice,
+  TestnetBadge
+} from "@/components/ui";
+import { friendlyError, useApi, type Destination, type Me } from "@/lib/client/api";
+import { formatUsdc } from "@/lib/client/format";
 
 // PRD §6 step 2: the web step opened from Telegram. Login → link → account
 // (individual or business) → wallet → first destination → grant Auctra's signer.
 
+const STEPS = ["Account", "Wallet", "Destination", "Permission"] as const;
+
 export default function OnboardingPage() {
   if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
     return (
-      <Shell>
-        <Notice tone="warn">Privy is not configured (NEXT_PUBLIC_PRIVY_APP_ID).</Notice>
-      </Shell>
+      <StatusScreen>
+        <ErrorState title="Sign-in isn't configured" description="This deployment is missing its Privy app ID, so setup can't start." />
+      </StatusScreen>
     );
   }
   return (
-    <Suspense>
+    <Suspense fallback={<StatusScreen><LoadingState label="Opening setup…" rows={0} /></StatusScreen>}>
       <Onboarding />
     </Suspense>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ step, children }: { step: number | null; children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-4 py-10">
-      <header className="flex items-center justify-between">
-        <span className="font-mono text-sm uppercase tracking-[0.2em] text-signal">Auctra</span>
+    <div className="min-h-dvh">
+      <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
+        <Logo />
         <TestnetBadge />
       </header>
-      {children}
-    </main>
+      <main id="main" className="mx-auto grid w-full max-w-xl gap-6 px-4 py-8 sm:py-12">
+        {step !== null && (
+          <nav aria-label="Setup progress">
+            <ol className="grid grid-cols-4 gap-2">
+              {STEPS.map((label, index) => {
+                const state = index < step ? "done" : index === step ? "current" : "todo";
+                return (
+                  <li key={label} aria-current={state === "current" ? "step" : undefined} className="grid gap-2">
+                    <span className={`h-1 rounded-full ${state === "todo" ? "bg-line" : "bg-signal"}`} />
+                    <span className={`flex items-center gap-1 text-xs ${state === "todo" ? "text-slate" : "font-medium text-ink"}`}>
+                      {state === "done" && <IconCheck className="text-signal-ink" />}
+                      <span className="truncate">{label}</span>
+                      <span className="sr-only">{state === "done" ? " (done)" : state === "current" ? " (current step)" : ""}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        )}
+        <div className="animate-enter">{children}</div>
+      </main>
+    </div>
+  );
+}
+
+function StepCard({ index, title, description, children }: { index: number; title: string; description: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Card className="p-5 sm:p-7">
+      <p className="text-meta">
+        Step {index + 1} of {STEPS.length}
+      </p>
+      <h1 className="mt-1 text-h1">{title}</h1>
+      <div className="mt-2 text-secondary">{description}</div>
+      <div className="mt-6">{children}</div>
+    </Card>
   );
 }
 
@@ -44,7 +95,7 @@ function Onboarding() {
   const token = useSearchParams().get("token");
   const [me, setMe] = useState<Me | null>(null);
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const linkAttempted = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -53,7 +104,7 @@ function Onboarding() {
       setMe(next);
       if (next.wallet) setDestinations((await request<{ destinations: Destination[] }>("/api/destinations")).destinations);
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e, "Couldn't load your setup"));
     }
   }, [request]);
 
@@ -65,61 +116,70 @@ function Onboarding() {
         try {
           await request("/api/onboarding/link", { method: "POST", body: { token } });
         } catch (e) {
-          setError((e as Error).message);
+          setError(friendlyError(e, "This setup link didn't work"));
         }
       }
       await refresh();
     })();
   }, [ready, authenticated, token, request, refresh]);
 
-  if (!ready) return <Shell><p className="text-slate">Loading…</p></Shell>;
+  if (!ready) {
+    return (
+      <Shell step={null}>
+        <LoadingState label="Connecting to Auctra…" rows={0} />
+      </Shell>
+    );
+  }
 
   if (!authenticated) {
     return (
-      <Shell>
-        <Card>
-          <h1 className="mb-2 text-2xl font-semibold">Set up Auctra</h1>
-          <p className="mb-4 text-sm text-slate">
-            Log in to create your Monad Testnet wallet. Auctra never asks for a seed phrase or private key.
+      <Shell step={null}>
+        <Card className="p-5 sm:p-7">
+          <h1 className="text-h1">Set up Auctra</h1>
+          <p className="mt-2 text-secondary">
+            Sign in to create your Auctra Wallet on Monad Testnet. You own the wallet. Auctra never asks for a seed phrase or private key.
           </p>
-          <Button onClick={login}>Log in</Button>
+          <Button size="lg" className="mt-6 w-full" onClick={login}>
+            Sign in
+          </Button>
         </Card>
       </Shell>
     );
   }
 
+  const step = !me?.account ? 0 : !me.wallet ? 1 : destinations.length === 0 ? 2 : me.wallet.signerStatus !== "GRANTED" ? 3 : 4;
+
   return (
-    <Shell>
-      {error && <Notice tone="error">{error}</Notice>}
-      {!me ? (
-        <p className="text-slate">Loading your account…</p>
-      ) : !me.linked ? (
-        <Card title="Link Telegram">
-          <p className="text-sm">Open the Auctra bot in Telegram and send /start. Then use the setup button it sends you.</p>
-        </Card>
-      ) : !me.account ? (
-        <AccountStep onDone={refresh} />
-      ) : !me.wallet ? (
-        <WalletStep onDone={refresh} />
-      ) : destinations.length === 0 ? (
-        <Card title="Step 3 · Save your first destination">
-          <p className="mb-4 text-sm text-slate">
-            Auctra only sends to destinations you have saved and confirmed, like a savings wallet or a vendor.
-          </p>
-          <AddDestination onSaved={refresh} defaultCategory={me.account.type === "BUSINESS" ? "VENDOR" : "SAVINGS"} />
-        </Card>
-      ) : me.wallet.signerStatus !== "GRANTED" ? (
-        <SignerStep me={me} destinations={destinations} onDone={refresh} />
-      ) : (
-        <Card>
-          <h1 className="mb-2 text-2xl font-semibold">You&apos;re set up</h1>
-          <p className="mb-4 text-sm text-slate">
-            Fund your wallet <Mono>{me.wallet.address}</Mono> with testnet MON (for gas) and testnet USDC, then go back to Telegram and
-            tell Auctra what you want your money to do.
-          </p>
-          <Link href="/dashboard" className="text-sm text-signal underline">Open the dashboard</Link>
-        </Card>
-      )}
+    <Shell step={me?.linked && step < 4 ? step : null}>
+      <div className="grid gap-4">
+        {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
+        {!me ? (
+          <LoadingState label="Loading your setup…" rows={0} />
+        ) : !me.linked ? (
+          <Card className="p-5 sm:p-7">
+            <h1 className="text-h1">Start from Telegram</h1>
+            <p className="mt-2 text-secondary">
+              Open the Auctra bot in Telegram and send /start. It sends you a setup button that connects this login to your chat.
+            </p>
+          </Card>
+        ) : step === 0 ? (
+          <AccountStep onDone={refresh} />
+        ) : step === 1 ? (
+          <WalletStep onDone={refresh} />
+        ) : step === 2 ? (
+          <StepCard
+            index={2}
+            title="Save your first destination"
+            description="Auctra only sends to wallets you've saved and confirmed, like a savings wallet or a vendor."
+          >
+            <DestinationForm defaultCategory={me.account?.type === "BUSINESS" ? "VENDOR" : "SAVINGS"} onSaved={refresh} />
+          </StepCard>
+        ) : step === 3 ? (
+          <PermissionStep me={me} destinations={destinations} onDone={refresh} />
+        ) : (
+          <DoneStep me={me} />
+        )}
+      </div>
     </Shell>
   );
 }
@@ -129,64 +189,88 @@ function AccountStep({ onDone }: { onDone: () => void }) {
   const [type, setType] = useState<"INDIVIDUAL" | "BUSINESS">("INDIVIDUAL");
   const [businessName, setBusinessName] = useState("");
   const [timezone, setTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
-  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const nameError = touched && type === "BUSINESS" && !businessName.trim() ? "Enter your business name." : null;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    setTouched(true);
+    if (type === "BUSINESS" && !businessName.trim()) return;
     setBusy(true);
     setError(null);
     try {
       await request("/api/onboarding/account", {
         method: "POST",
-        body: { type, timezone, ...(type === "BUSINESS" ? { businessName } : {}) }
+        body: { type, timezone, ...(type === "BUSINESS" ? { businessName: businessName.trim() } : {}) }
       });
       onDone();
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e, "Your account wasn't created"));
     } finally {
       setBusy(false);
     }
   }
 
+  const options = [
+    { value: "INDIVIDUAL" as const, title: "Personal", text: "Savings, recurring payments and balance protection." },
+    { value: "BUSINESS" as const, title: "Business", text: "Vendor and contractor payments, reserve sweeps, operating floor." }
+  ];
+
   return (
-    <Card title="Step 1 · Your account">
-      <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(["INDIVIDUAL", "BUSINESS"] as const).map((option) => (
-            <button
-              type="button"
-              key={option}
-              onClick={() => setType(option)}
-              className={`rounded-[12px] border p-4 text-left ${type === option ? "border-signal" : "border-white/15"}`}
+    <StepCard index={0} title="Who is Auctra working for?" description="You can't change this later, so pick the one that fits.">
+      <form onSubmit={submit} noValidate className="grid gap-5">
+        <fieldset className="grid gap-3 sm:grid-cols-2">
+          <legend className="sr-only">Account type</legend>
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className={`relative grid cursor-pointer gap-1 rounded-[var(--radius-card)] border p-4 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-obsidian ${
+                type === option.value ? "border-obsidian bg-cloud/60" : "border-line hover:border-slate/50"
+              }`}
             >
-              <div className="font-medium">{option === "INDIVIDUAL" ? "Personal" : "Business"}</div>
-              <div className="mt-1 text-xs text-slate">
-                {option === "INDIVIDUAL" ? "Savings, recurring payments, balance protection." : "Vendor and contractor payments, reserve sweeps, operating floor."}
-              </div>
-            </button>
+              <input
+                type="radio"
+                name="account-type"
+                value={option.value}
+                checked={type === option.value}
+                onChange={() => setType(option.value)}
+                className="sr-only"
+              />
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-h3">{option.title}</span>
+                <span
+                  aria-hidden="true"
+                  className={`grid size-5 place-items-center rounded-full border ${type === option.value ? "border-obsidian bg-obsidian text-cloud" : "border-line"}`}
+                >
+                  {type === option.value && <IconCheck className="text-xs" />}
+                </span>
+              </span>
+              <span className="text-sm text-slate">{option.text}</span>
+            </label>
           ))}
-        </div>
+        </fieldset>
         {type === "BUSINESS" && (
-          <label className="block">
-            <Label>Business name</Label>
-            <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} required maxLength={120} />
-          </label>
+          <Field label="Business name" error={nameError}>
+            {(p) => <Input {...p} value={businessName} onChange={(e) => setBusinessName(e.target.value)} maxLength={120} autoComplete="organization" />}
+          </Field>
         )}
-        <label className="block">
-          <Label>Timezone (schedules run in this timezone)</Label>
-          <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} required />
-        </label>
-        {error && <Notice tone="error">{error}</Notice>}
-        <Button type="submit" disabled={busy}>Continue</Button>
+        <Field label="Timezone" hint="Your schedules run at local times in this timezone.">
+          {(p) => <Input {...p} value={timezone} onChange={(e) => setTimezone(e.target.value)} autoComplete="off" spellCheck={false} />}
+        </Field>
+        {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
+        <Button type="submit" size="lg" loading={busy} loadingLabel="Creating your account…" className="w-full sm:w-auto sm:justify-self-start">
+          Continue
+        </Button>
       </form>
-    </Card>
+    </StepCard>
   );
 }
 
 function WalletStep({ onDone }: { onDone: () => void }) {
   const { request } = useApi();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function register() {
@@ -196,28 +280,32 @@ function WalletStep({ onDone }: { onDone: () => void }) {
       await request("/api/onboarding/wallet", { method: "POST" });
       onDone();
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e, "Your wallet isn't connected yet"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Card title="Step 2 · Your wallet">
-      <p className="mb-4 text-sm text-slate">
-        Privy created an embedded wallet for you when you logged in. You own it; Auctra never sees its keys. Connect it to Auctra as
-        your execution wallet on Monad Testnet.
-      </p>
-      {error && <div className="mb-3"><Notice tone="error">{error}</Notice></div>}
-      <Button onClick={register} disabled={busy}>Use this wallet</Button>
-    </Card>
+    <StepCard
+      index={1}
+      title="Connect your Auctra Wallet"
+      description="A wallet was created for you when you signed in. You own it, and Auctra never sees its keys. Connect it so your automations can send from it."
+    >
+      <div className="grid gap-4">
+        {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
+        <Button size="lg" onClick={register} loading={busy} loadingLabel="Connecting wallet…" className="w-full sm:w-auto sm:justify-self-start">
+          Connect wallet
+        </Button>
+      </div>
+    </StepCard>
   );
 }
 
-function SignerStep({ me, destinations, onDone }: { me: Me; destinations: Destination[]; onDone: () => void }) {
+function PermissionStep({ me, destinations, onDone }: { me: Me; destinations: Destination[]; onDone: () => void }) {
   const { request } = useApi();
   const { addSigners } = useSigners();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function grant() {
@@ -229,30 +317,66 @@ function SignerStep({ me, destinations, onDone }: { me: Me; destinations: Destin
       await request("/api/onboarding/signer", { method: "POST", body: { action: "granted" } });
       onDone();
     } catch (e) {
-      setError((e as Error).message);
+      setError(friendlyError(e, "Permission wasn't granted"));
     } finally {
       setBusy(false);
     }
   }
 
+  const limits = [
+    "Send USDC only, on Monad Testnet only",
+    `Send only to your saved destinations (${destinations.map((d) => d.label).join(", ")})`,
+    `At most ${formatUsdc(me.limits.maxTransferUsdc)} USDC per transfer and ${formatUsdc(me.limits.dailyCapUsdc)} USDC per 24 hours`,
+    "Only run automations you've confirmed"
+  ];
+
   return (
-    <Card title="Step 4 · Allow Auctra to send scheduled transfers">
-      <div className="space-y-3 text-sm">
-        <p>You are giving Auctra limited signing permission on your wallet so it can run the automations you confirm. It can:</p>
-        <ul className="list-disc space-y-1 pl-5 text-slate">
-          <li>send only USDC, only on Monad Testnet;</li>
-          <li>send only to your saved destinations ({destinations.map((d) => d.label).join(", ")});</li>
-          <li>send at most {me.limits.maxTransferUsdc} USDC per transfer and {me.limits.dailyCapUsdc} USDC per 24 hours;</li>
-          <li>only run automations you confirmed.</li>
+    <StepCard
+      index={3}
+      title="Allow Auctra to send scheduled transfers"
+      description="You're giving Auctra limited permission on your wallet so it can run the automations you confirm."
+    >
+      <div className="grid gap-5">
+        <ul className="grid gap-2.5">
+          {limits.map((item) => (
+            <li key={item} className="flex items-start gap-2.5 text-[0.9375rem]">
+              <IconCheck className="mt-1 shrink-0 text-signal-ink" />
+              <span className="min-w-0">{item}</span>
+            </li>
+          ))}
         </ul>
-        <p className="text-slate">
-          Privy enforces these limits too, not just Auctra. You can revoke this permission at any time in Settings; every automation
-          then stops.
-        </p>
-        {error && <Notice tone="error">{error}</Notice>}
-        <Button onClick={grant} disabled={busy}>Grant permission</Button>
+        <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4 text-sm text-ink-2">
+          <IconShield className="mt-0.5 shrink-0 text-lg text-slate" />
+          <p>Your wallet provider enforces these limits too, not just Auctra. You can revoke this permission at any time in Settings, and every automation stops.</p>
+        </div>
+        {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
+        <Button size="lg" onClick={grant} loading={busy} loadingLabel="Waiting for your wallet…" className="w-full sm:w-auto sm:justify-self-start">
+          Grant permission
+        </Button>
       </div>
-    </Card>
+    </StepCard>
   );
 }
 
+function DoneStep({ me }: { me: Me }) {
+  return (
+    <Card className="p-5 sm:p-7">
+      <span className="grid size-12 place-items-center rounded-full bg-signal-soft text-2xl text-signal-ink">
+        <IconCheck />
+      </span>
+      <h1 className="mt-4 text-h1">You&apos;re set up</h1>
+      <p className="mt-2 text-secondary">
+        Add testnet MON (for network fees) and testnet USDC to your wallet, then go back to Telegram and tell Auctra what you want your money to do.
+      </p>
+      {me.wallet && (
+        <div className="mt-4 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
+          <p className="text-sm text-slate">Your Auctra Wallet</p>
+          <Address value={me.wallet.address} label="Wallet address" full />
+        </div>
+      )}
+      <ButtonLink href="/dashboard" size="lg" className="mt-6 w-full sm:w-auto">
+        Open dashboard
+      </ButtonLink>
+    </Card>
+  );
+}

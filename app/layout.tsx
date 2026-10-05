@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Tell Auctra what you want your money to do. It handles the rest."
 };
 
-export const viewport: Viewport = { themeColor: "#0B0D0F", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0B0D0F", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

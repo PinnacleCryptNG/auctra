@@ -1,0 +1,145 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import { Address, Button, IconActivity, IconHome, IconLogout, IconPlus, IconRepeat, IconSettings, TestnetBadge } from "@/components/ui";
+import { useAuctra } from "@/lib/client/auctra-data";
+import { CreateAutomationDialog } from "./create-automation";
+import { Logo } from "./logo";
+
+const NAV = [
+  { href: "/dashboard", label: "Overview", icon: IconHome },
+  { href: "/dashboard/automations", label: "Automations", icon: IconRepeat },
+  { href: "/dashboard/activity", label: "Activity", icon: IconActivity },
+  { href: "/dashboard/settings", label: "Settings", icon: IconSettings }
+];
+
+function isActive(pathname: string, href: string) {
+  return href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+}
+
+/**
+ * Desktop (≥1024px): fixed sidebar with navigation, the primary action and
+ * the wallet. Below that: a compact top bar with the primary action, and a
+ * bottom tab bar within thumb reach.
+ */
+export function AppShell({ children, onSignOut }: { children: ReactNode; onSignOut: () => void }) {
+  const pathname = usePathname();
+  const { me, openCreate } = useAuctra();
+  const account = me.data?.account;
+  const wallet = me.data?.wallet;
+  const accountName = account?.type === "BUSINESS" ? account.businessName : "Personal account";
+
+  return (
+    <div className="min-h-dvh lg:grid lg:grid-cols-[15.5rem_minmax(0,1fr)]">
+      <a href="#main" className="sr-only z-50 rounded-[var(--radius-control)] bg-obsidian px-3 py-2 text-cloud focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        Skip to content
+      </a>
+
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
+        <div className="px-5 pt-5 pb-4">
+          <Logo href="/dashboard" />
+        </div>
+        <div className="px-4">
+          <Button className="w-full" icon={<IconPlus />} onClick={() => openCreate()}>
+            Create automation
+          </Button>
+        </div>
+        <nav aria-label="Main" className="mt-5 px-3">
+          <ul className="grid gap-0.5">
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active = isActive(pathname, href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-10 items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm transition-colors ${
+                      active ? "bg-cloud font-medium text-ink" : "text-ink-2 hover:bg-cloud hover:text-ink"
+                    }`}
+                  >
+                    <Icon className={`text-lg ${active ? "text-ink" : "text-slate"}`} />
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        <div className="mt-auto grid gap-3 border-t border-line px-5 py-4">
+          <div className="grid gap-1">
+            <p className="truncate text-sm font-medium">{accountName}</p>
+            {wallet && <Address value={wallet.address} label="Wallet address" />}
+          </div>
+          <div>
+            <TestnetBadge />
+          </div>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="-mx-2 inline-flex min-h-10 items-center gap-2 rounded-[6px] px-2 text-sm text-slate hover:bg-cloud hover:text-ink"
+          >
+            <IconLogout className="text-base" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-col">
+        {/* Mobile / tablet top bar */}
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 py-2 backdrop-blur pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
+          <Logo href="/dashboard" />
+          <div className="flex items-center gap-2">
+            <TestnetBadge compact />
+            <Button size="sm" icon={<IconPlus />} onClick={() => openCreate()} aria-label="Create automation">
+              <span className="hidden min-[400px]:inline">Create</span>
+            </Button>
+          </div>
+        </header>
+
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[72rem] flex-1 px-4 pt-5 pb-28 focus:outline-none sm:px-6 sm:pt-7 lg:px-10 lg:pt-10 lg:pb-12">
+          {children}
+        </main>
+
+        {/* Mobile / tablet bottom navigation */}
+        <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+          <ul className="mx-auto grid max-w-lg grid-cols-4">
+            {NAV.map(({ href, label, icon: Icon }) => {
+              const active = isActive(pathname, href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium ${active ? "text-ink" : "text-slate"}`}
+                  >
+                    <Icon className="text-[1.375rem]" />
+                    {label}
+                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-signal" : "bg-transparent"}`} />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+
+      <CreateAutomationDialog />
+    </div>
+  );
+}
+
+/** Page heading row: title (h1), optional description and actions. */
+export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 lg:mb-8">
+      <div className="grid min-w-0 gap-1">
+        <h1 className="text-h1">{title}</h1>
+        {description && <p className="text-secondary">{description}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+    </div>
+  );
+}

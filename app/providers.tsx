@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       appId={appId}
       config={{
         loginMethods: ["telegram", "email"],
-        appearance: { theme: "dark", accentColor: "#35D07F" },
+        appearance: { theme: "light", accentColor: "#35D07F" },
         // Testnet only: no network switch is exposed (PRD §20).
         defaultChain: monadTestnet,
         supportedChains: [monadTestnet],

@@ -27,8 +27,24 @@ type AutomationProposal = {
   memo: string | null;
 };
 
+/** Structured version of the confirmation summary, for UIs that render it as fields. */
+export type AutomationPreview = {
+  amount: string;
+  asset: "USDC";
+  destination: { label: string; address: string; category: string };
+  schedule: AutomationSchedule;
+  timezone: string;
+  firstRunAt: string;
+  condition: AutomationCondition | null;
+  balanceFloor: string | null;
+  memo: string | null;
+  network: "Monad Testnet";
+  chainId: number;
+  wallet: { address: string };
+};
+
 export type PrepareResult =
-  | { kind: "confirm"; confirmationId: string; summary: string }
+  | { kind: "confirm"; confirmationId: string; summary: string; preview: AutomationPreview }
   | { kind: "needs_destination"; address: string };
 
 function requireReadyContext(ctx: AccountContext) {
@@ -102,7 +118,21 @@ export async function prepareAutomation(
   ];
 
   const confirmation = await createConfirmation(db, { userId: ctx.user.id, kind: "AUTOMATION", payload: proposal });
-  return { kind: "confirm", confirmationId: confirmation.id, summary: lines.join("\n") };
+  const preview: AutomationPreview = {
+    amount: intent.amount,
+    asset: "USDC",
+    destination: { label: destination.label, address: destination.address, category: destination.category },
+    schedule: intent.schedule,
+    timezone,
+    firstRunAt: firstRun.toISOString(),
+    condition: intent.conditions[0] ?? null,
+    balanceFloor: wallet.balanceFloor,
+    memo: proposal.memo,
+    network: "Monad Testnet",
+    chainId: wallet.chainId,
+    wallet: { address: wallet.address }
+  };
+  return { kind: "confirm", confirmationId: confirmation.id, summary: lines.join("\n"), preview };
 }
 
 export async function activateAutomation(
