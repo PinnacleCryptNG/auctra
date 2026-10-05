@@ -1,6 +1,6 @@
 import { MONAD_TESTNET_CHAIN_ID } from "./network";
 
-export const AUctraConfig = {
+export const AuctraConfig = {
   chainId: MONAD_TESTNET_CHAIN_ID,
   network: "testnet",
   asset: "USDC"
