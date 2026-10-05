@@ -101,3 +101,12 @@ Presentation only. No changes to the architecture, the execution model, the data
 | 4.11 | Decision | The landing page uses the real `ConfirmationCard` as its hero visual, plus "How it works", individuals and businesses, and security sections. | Show the product, not generic AI graphics (brief). | `app/page.tsx` |
 | 4.12 | Decision | The Privy login modal uses the light theme. | Matches the app. | `app/providers.tsx` |
 | 4.13 | Removed | `components/ui.tsx` and `components/add-destination.tsx`. | Replaced by `components/ui/*` and `DestinationForm`. | — |
+
+## Round 5: sandbox runs the revamped UI
+
+| # | Type | Change | Why | Where |
+|---|---|---|---|---|
+| 5.1 | Decision | The sandbox now bundles the real pages and components from `app/` and `components/` (landing, onboarding, Overview, Automations, Activity, Settings). Small stand-ins replace `next/link`, `next/navigation` (in-memory router) and Privy (signed in, wallet already exists). The stand-ins live only in `demo/shims`; the app code is unchanged. | The sandbox should show exactly the UI that ships. | `demo/sandbox/app.tsx`, `demo/shims/*` |
+| 5.2 | Decision | The dashboard's `fetch("/api/...")` calls are answered in the page by the real services on PGlite, using the same request/response contract as `app/api/**`. CSV export and explorer links are disabled, because simulated transactions aren't on chain and the artifact frame blocks downloads. | Real behaviour without a server. | `demo/sandbox/engine.ts` (`handleApi`) |
+| 5.3 | Decision | A "Sandbox" panel holds the simulated controls (Personal/Business, jump to the next scheduled run, add test USDC) and the Telegram bot chat, which shares the same account as the dashboard. | Shows both product surfaces working on one state. | `demo/sandbox/app.tsx` |
+| 5.4 | Decision | The stylesheet is compiled with Tailwind from `app/globals.css`, so the sandbox uses the same design tokens. | One design system. | `demo/sandbox.css`, `demo/build.mjs` |
