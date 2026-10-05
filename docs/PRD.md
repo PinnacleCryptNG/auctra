@@ -300,11 +300,12 @@ PENDING ──► SUBMITTED ──► CONFIRMED
 5. **Advance.** Set `next_run_at` to the next occurrence after *now*, not after the missed one.
 
 **Retry rules:**
-- A `PENDING` row with no `tx_hash` that is older than 5 minutes may be resubmitted **only** with the same idempotency key, and only while Privy's idempotency window covers it (§29). Outside that window it becomes `UNKNOWN`.
+- A `PENDING` row with no `tx_hash` that is older than 5 minutes becomes `UNKNOWN` (v2.2). It is not resubmitted automatically, even with the same idempotency key, until Privy's idempotency window is verified (§29). Preflight errors (e.g. the balance can't be read) happen before anything is sent, so they are recorded as `SKIPPED` with `PREFLIGHT_ERROR`, never `UNKNOWN`.
+- A `SUBMITTED` row with no receipt after 1 hour becomes `UNKNOWN`.
 - `UNKNOWN` is never resent automatically. Telegram tells the user and the operator, and someone reconciles it by checking the wallet's on-chain history.
 - `SUBMITTED` rows are never resent. They are confirmed by `tx_hash` only.
 
-**Missed occurrences:** if cron was down, only the most recent due occurrence runs, and only if it is less than 24 hours old. Older missed occurrences are recorded as `SKIPPED` with `MISSED_WINDOW`. Missed payments are never batch-executed.
+**Missed occurrences:** if cron was down, only the most recent due occurrence runs, and only if it is less than 24 hours old; otherwise that occurrence is recorded as `SKIPPED` with `MISSED_WINDOW`. Earlier missed occurrences are counted in one `OCCURRENCES_MISSED` audit event, not one row each (v2.2). Missed payments are never batch-executed.
 
 A durable queue/worker can replace this in production; it is not required for the hackathon.
 
