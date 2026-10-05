@@ -1,11 +1,24 @@
 # Auctra — Final Product Requirements Document
 
 **Autonomous Financial Agent · Monad Metropolis Hackathon MVP**
-**Version 2.1 · FROZEN · Implementation-ready**
+**Version 2.2 · FROZEN · Implementation-ready**
 
 This file is the single authoritative PRD (§23). It supersedes `Auctra_Final_PRD_v2.docx`.
 
 ## Changelog
+
+**v2.2** adds **businesses** to the ICP, alongside individuals. The rest of the frozen product contract is unchanged: chain, asset, wallet provider, security boundary and core automation model.
+
+| # | Change | Sections |
+|---|---|---|
+| 1 | Target users are individuals **and** businesses. | 4, 27 |
+| 2 | Every user owns an **account** of type `INDIVIDUAL` or `BUSINESS`. Wallets, destinations and automations belong to the account. | 6, 9, 18 |
+| 3 | Business use cases: vendor payments, contractor payouts, treasury reserve sweeps, operating-wallet floor. | 5 |
+| 4 | Destinations get a **category** (savings, vendor, contractor, …). Automations get an optional **memo** (e.g. an invoice reference). | 9, 18 |
+| 5 | Execution history can be exported as **CSV** for bookkeeping. | 12, 19 |
+| 6 | Multi-member business accounts, roles, approvals, KYB, invoicing and accounting integrations stay **out of scope**. The account boundary makes them additive later. | 24, 25 |
+
+Implementation decisions taken while building are logged in `docs/CHANGES.md`.
 
 **v2.1** clarifies v2.0. The frozen product contract (§27) is unchanged: category, wallet provider, chain, asset, core automation model and security boundary. The changes are:
 
@@ -75,11 +88,17 @@ Auctra is the automation layer between a user's financial intent and delegated w
 - Auctra fails closed if any check fails: permission, network, asset, destination, balance, schedule or policy.
 - The MVP is testnet software, not a real-funds financial service.
 
-## 4. Target user
+## 4. Target users (v2.2)
 
-**Primary:** crypto-native individuals who hold stablecoins and want recurring or rule-based money movement, without manually starting the same transaction every week or month.
+Auctra serves two segments from day one, with the same product and the same security boundary.
 
-**Future:** small teams, businesses, DAOs and treasury operators. Organization workflows are not required for the hackathon MVP.
+**Individuals:** crypto-native people who hold stablecoins and want recurring or rule-based money movement, without manually starting the same transaction every week or month.
+
+**Businesses:** small, stablecoin-native businesses whose founder or operator runs payments: startups, agencies, online businesses and crypto-native teams. They want recurring vendor and contractor payments, and they want to keep an operating wallet funded and its surplus swept to a reserve, without someone remembering to send each transfer.
+
+In the MVP, a business account has **one operator** (the account owner), who acts through Telegram and the dashboard like an individual does. What differs is the account type and business name, the destination categories, payment memos and the CSV export.
+
+**Future:** multi-member business accounts with roles and approvals, DAOs and treasury teams (§25).
 
 ## 5. MVP use cases
 
@@ -89,6 +108,12 @@ Auctra is the automation layer between a user's financial intent and delegated w
 | Recurring payment | Pay this wallet 100 USDC on the 1st, monthly. | Yes | Scheduled transfer to a saved destination |
 | Conditional transfer | Send 50 USDC every Monday only if balance ≥ 300. | Yes | `MIN_BALANCE` condition, checked **before** the transfer |
 | Balance protection | Never let my spending wallet fall below 300 USDC. | Yes | Wallet `balance_floor`, checked **after** the transfer, for every automation on that wallet |
+| Vendor payment (business) | Pay Acme Hosting 80 USDC on the 1st of every month, memo "INV hosting". | Yes | Scheduled transfer to a saved `VENDOR` destination, with memo |
+| Contractor payout (business) | Pay Ada 100 USDC every Friday. | Yes | One scheduled transfer per contractor (no batch payouts in the MVP) |
+| Reserve sweep (business) | Move 50 USDC to the reserve wallet every Monday if the balance is ≥ 500. | Yes | Scheduled transfer to a `TREASURY` destination + `MIN_BALANCE` |
+| Operating floor (business) | Never let the operating wallet fall below 1,000 USDC. | Yes | Wallet `balance_floor` |
+| Batch payroll / mass payouts | Pay these 12 people on the 25th. | No | Future |
+| Approvals | A second person approves payments over X. | No | Future |
 | Trading | Buy MON when the price drops 5%. | No | |
 | DeFi yield | Move idle funds to the best yield. | No | |
 | Fiat/card subscriptions | Netflix, utilities, bank debit. | No | |
@@ -101,6 +126,7 @@ Balance protection never moves money *into* a wallet (no top-ups). It only block
 1. Start the Auctra Telegram bot (`/start`).
 2. **Web step (v2.1):** the bot sends a link that opens the dashboard as a Telegram Mini App, or in a browser. There the user:
    - logs in with Privy (Telegram login),
+   - chooses an account type: **Individual**, or **Business** with a business name (v2.2),
    - gets an embedded wallet provisioned,
    - reviews the delegation disclosure (§7.2),
    - adds Auctra's session signer, with the Auctra policy attached.
@@ -218,7 +244,7 @@ The LLM may extract and normalize intent. It must never enforce authorization, l
 | Field | Purpose |
 |---|---|
 | automation_id | Stable identifier |
-| user_id | Owner |
+| account_id | Owning account, individual or business (v2.2) |
 | wallet_id | Execution wallet reference |
 | destination_id | Saved, confirmed destination (v2.1) |
 | action | `TRANSFER` |
@@ -231,6 +257,7 @@ The LLM may extract and normalize intent. It must never enforce authorization, l
 | next_run_at | Next occurrence (UTC instant) |
 | last_run_at | Last attempt |
 | execution_count | Successful execution count |
+| memo | Optional free-text reference, ≤ 140 characters, e.g. an invoice number (v2.2). Never sent on-chain. |
 
 **Conditions (MVP):**
 - `MIN_BALANCE { amount }`: the wallet's USDC balance must be ≥ `amount` **before** the transfer.
@@ -312,8 +339,8 @@ Rules:
 - Onboarding: Privy login, wallet, session signer consent (Telegram Mini App compatible)
 - Balance + active automations
 - Automation detail / create (no edit in the MVP)
-- Saved destinations
-- Execution history
+- Saved destinations, with categories
+- Execution history, with CSV export (v2.2)
 - Settings/security: timezone, balance floor, revoke Auctra's signer
 
 Telegram is the primary product surface. The dashboard exists to host onboarding and to make state and execution legible during the demo.
@@ -424,9 +451,10 @@ Never create environment variables for user private keys, seed phrases or export
 | Table | Key fields |
 |---|---|
 | users | id, telegram_id (unique), privy_user_id (unique), timezone, created_at |
-| wallets | id, user_id, privy_wallet_id (unique), address, chain_id, status, signer_status, privy_policy_id, balance_floor |
-| destinations (v2.1) | id, user_id, label, address, confirmed_at, created_at; unique (user_id, label) and unique (user_id, address) |
-| automations | id, user_id, wallet_id, destination_id, action, asset, amount, schedule (jsonb), timezone, conditions (jsonb), status, next_run_at, last_run_at, execution_count |
+| accounts (v2.2) | id, owner_user_id (unique in MVP), type (`INDIVIDUAL` / `BUSINESS`), business_name, created_at |
+| wallets | id, account_id, privy_wallet_id (unique), address, chain_id, status, signer_status, privy_policy_id, balance_floor |
+| destinations (v2.1) | id, account_id, label, address, category (v2.2), confirmed_at, created_at; unique (account_id, label) and unique (account_id, address) |
+| automations | id, account_id, wallet_id, destination_id, action, asset, amount, schedule (jsonb), timezone, conditions (jsonb), memo (v2.2), status, next_run_at, last_run_at, execution_count |
 | executions | id, automation_id, execution_key (unique), trigger (`SCHEDULED` / `MANUAL`), scheduled_for, status, tx_hash, error_code, created_at, submitted_at, finalized_at |
 | confirmations | id, user_id, intent_hash, payload (jsonb), confirmed_at, used_at, expires_at |
 | telegram_updates (v2.1) | update_id (primary key), received_at |
@@ -445,7 +473,7 @@ Statuses are Postgres enums. Amounts are stored as exact decimal strings, or as 
 | `GET /api/automations` | List the user's automations |
 | `PATCH /api/automations/:id` | Pause / resume / cancel (no edit in the MVP) |
 | `POST /api/automations/:id/run` | Manual demo execution (Run Now) |
-| `GET /api/executions` | Execution history |
+| `GET /api/executions` | Execution history (`?format=csv` for export, v2.2) |
 | `GET /api/balance` | Read testnet balance |
 | `GET /api/cron/execute` | Scheduler endpoint (Vercel Cron, bearer `CRON_SECRET`) |
 | `POST /api/telegram/webhook` | Telegram updates (secret-token header) |
@@ -487,6 +515,9 @@ if (chainId !== MONAD_TESTNET_CHAIN_ID) {
 - [ ] No user private key or seed phrase appears in source, database, logs, API payloads or prompts. The authorization key appears only in server environment configuration.
 - [ ] Mainnet chain IDs are rejected, and CI enforces it.
 - [ ] The entire demo runs on Monad Testnet assets.
+- [ ] A user can onboard as a Business with a business name; the dashboard and Telegram show it (v2.2).
+- [ ] Destinations carry a category; automations can carry a memo shown in history (v2.2).
+- [ ] Execution history exports to CSV (v2.2).
 
 ## 22. Hackathon demo
 
@@ -537,11 +568,13 @@ Before the demo: onboard, fund the wallet, and save a "savings wallet" destinati
 
 ## 24. Explicitly out of scope
 
-Mainnet · fiat banking · card payments · merchant subscription APIs · trading · perpetuals · lending · yield optimization · NFTs · cross-chain execution · multiple stablecoins · custom Auctra smart contracts · agent-to-agent payments · complex organizational approvals · financial advice · autonomous portfolio management · automation editing (v2.1) · balance top-ups (v2.1).
+Mainnet · fiat banking · card payments · merchant subscription APIs · trading · perpetuals · lending · yield optimization · NFTs · cross-chain execution · multiple stablecoins · custom Auctra smart contracts · agent-to-agent payments · complex organizational approvals · financial advice · autonomous portfolio management · automation editing (v2.1) · balance top-ups (v2.1) · multi-member business accounts, roles and approvals (v2.2) · batch/mass payouts (v2.2) · KYB/KYC (v2.2) · invoicing and accounting integrations (v2.2).
 
 ## 25. Future roadmap
 
-- Organization/team wallets and approval workflows
+- Business accounts with multiple members, roles and approval workflows (builds on the v2.2 account model)
+- Batch payouts and payroll schedules
+- Accounting exports and integrations beyond CSV
 - Multiple assets and chains
 - Merchant/subscription integrations
 - Richer conditions
@@ -575,7 +608,7 @@ The application can later become the first consumer of the original authorizatio
 
 This document is the implementation source of truth for the Monad Metropolis hackathon build. Product category, wallet provider, blockchain, asset, core automation model and security boundary are frozen. Implementation details may improve without changing the product contract.
 
-**FROZEN MVP:** Telegram-first autonomous financial agent → Privy session-signer wallet execution → USDC → Monad Testnet → deterministic automation + audit trail.
+**FROZEN MVP:** Telegram-first autonomous financial agent for individuals and businesses → Privy session-signer wallet execution → USDC → Monad Testnet → deterministic automation + audit trail.
 
 ## 28. Technical references
 

@@ -1,31 +1,26 @@
 import { z } from "zod";
+import { conditionSchema, scheduleSchema, usdcAmountString } from "./automation-types";
 
-export const financialIntentSchema = z.object({
-  action: z.literal("TRANSFER"),
-  asset: z.literal("USDC"),
-  amount: z.string().regex(/^\d+(\.\d+)?$/),
-  destination: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
-  schedule: z.object({
-    frequency: z.enum(["ONCE", "DAILY", "WEEKLY", "MONTHLY"]),
-    dayOfWeek: z.enum([
-      "MONDAY",
-      "TUESDAY",
-      "WEDNESDAY",
-      "THURSDAY",
-      "FRIDAY",
-      "SATURDAY",
-      "SUNDAY"
-    ]).optional(),
-    dayOfMonth: z.number().int().min(1).max(31).optional(),
-    time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-  }),
-  conditions: z.array(
-    z.object({
-      type: z.literal("MIN_BALANCE"),
-      amount: z.string().regex(/^\d+(\.\d+)?$/),
-      asset: z.literal("USDC")
-    })
-  )
-});
+// PRD §8. The LLM's output must parse with this schema before anything else
+// happens. Destinations are a saved label or a literal address the user typed;
+// a literal address is never executed directly (it starts the save-destination flow).
+
+export const intentDestinationSchema = z.union([
+  z.object({ label: z.string().trim().min(1).max(64) }).strict(),
+  z.object({ address: z.string().regex(/^0x[a-fA-F0-9]{40}$/) }).strict()
+]);
+
+export const financialIntentSchema = z
+  .object({
+    action: z.literal("TRANSFER"),
+    asset: z.literal("USDC"),
+    amount: usdcAmountString,
+    destination: intentDestinationSchema,
+    schedule: scheduleSchema,
+    conditions: z.array(conditionSchema).max(1),
+    memo: z.string().trim().min(1).max(140).optional()
+  })
+  .strict();
 
 export type FinancialIntent = z.infer<typeof financialIntentSchema>;
+export type IntentDestination = z.infer<typeof intentDestinationSchema>;
