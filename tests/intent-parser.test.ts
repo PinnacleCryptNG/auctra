@@ -71,6 +71,11 @@ describe("toFinancialIntent", () => {
     expect(toFinancialIntent({ ...base, frequency: "MONTHLY", dayOfWeek: null, dayOfMonth: 40 })).toMatchObject({ kind: "clarify" });
   });
 
+  it("maps balance protection to a floor setting, never a transfer", () => {
+    expect(toFinancialIntent({ ...base, outcome: "SET_BALANCE_FLOOR", amount: "300" })).toEqual({ kind: "set_floor", amount: "300" });
+    expect(toFinancialIntent({ ...base, outcome: "SET_BALANCE_FLOOR", amount: null })).toMatchObject({ kind: "clarify" });
+  });
+
   it("rejects other assets and unsupported actions", () => {
     expect(toFinancialIntent({ ...base, asset: "MON" })).toMatchObject({ kind: "unsupported" });
     expect(toFinancialIntent({ ...base, outcome: "UNSUPPORTED", unsupportedReason: "Auctra doesn't trade." })).toMatchObject({

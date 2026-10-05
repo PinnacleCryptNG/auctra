@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "../db/client";
-import { automations, users } from "../db/schema";
+import { automations, users, wallets } from "../db/schema";
 import type { Extraction, IntentModel } from "../lib/ai/intent-parser";
 import type { InlineKeyboard, TelegramClient, TelegramUpdate } from "../lib/telegram/api";
 import { handleUpdate, type BotDeps } from "../lib/telegram/bot";
@@ -165,6 +165,17 @@ describe("telegram bot", () => {
     await handleUpdate(deps, text(ctx.user.telegramId!, "/pause"));
     await handleUpdate(deps, tap(ctx.user.telegramId!, lastButton().callback_data!));
     expect(sent.at(-1)!.text).toBe("Automation paused.");
+  });
+
+  it("sets a balance floor from natural language after confirmation", async () => {
+    const { ctx } = await createFixture(db);
+    const deps = makeDeps(async () => ({ ...demo, outcome: "SET_BALANCE_FLOOR", amount: "300" }));
+    await handleUpdate(deps, text(ctx.user.telegramId!, "Never let my wallet fall below 300 USDC"));
+    expect(sent.at(-1)!.text).toContain("balance floor of 300 USDC");
+    await handleUpdate(deps, tap(ctx.user.telegramId!, lastButton().callback_data!));
+    expect(sent.at(-1)!.text).toBe("Balance floor set to 300 USDC.");
+    const [wallet] = await db.select().from(wallets);
+    expect(wallet.balanceFloor).toBe("300.000000");
   });
 
   it("asks unfinished users to complete onboarding", async () => {

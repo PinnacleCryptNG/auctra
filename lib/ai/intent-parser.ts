@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { DAYS_OF_WEEK } from "../automation-types";
+import { DAYS_OF_WEEK, usdcAmountString } from "../automation-types";
 import { financialIntentSchema, type FinancialIntent } from "../financial-intent";
 
 // PRD §8: Claude only extracts what the user said. It never authorizes, never
@@ -11,7 +11,7 @@ import { financialIntentSchema, type FinancialIntent } from "../financial-intent
 export const DEFAULT_INTENT_MODEL = "claude-opus-5-5";
 
 export const extractionSchema = z.object({
-  outcome: z.enum(["TRANSFER_REQUEST", "UNSUPPORTED", "NOT_A_REQUEST"]),
+  outcome: z.enum(["TRANSFER_REQUEST", "SET_BALANCE_FLOOR", "UNSUPPORTED", "NOT_A_REQUEST"]),
   unsupportedReason: z.string().nullable(),
   amount: z.string().nullable(),
   asset: z.string().nullable(),
@@ -31,6 +31,7 @@ export type Extraction = z.infer<typeof extractionSchema>;
 export type ParseResult =
   | { kind: "intent"; intent: FinancialIntent }
   | { kind: "clarify"; question: string }
+  | { kind: "set_floor"; amount: string }
   | { kind: "unsupported"; message: string }
   | { kind: "not_a_request" };
 
@@ -47,6 +48,7 @@ Rules:
 - date is YYYY-MM-DD for one-time transfers. Resolve relative dates ("tomorrow", "next Tuesday") using the current date given in the message.
 - dayOfWeek is for weekly schedules; dayOfMonth (1–31) is for monthly schedules ("on the 1st").
 - minBalance is set only for conditions like "only if my balance is at least 300".
+- Use SET_BALANCE_FLOOR when the user wants their wallet never to go below an amount ("never let my wallet fall below 300 USDC"); put that amount in amount. It does not move money.
 - Use UNSUPPORTED (with a one-sentence unsupportedReason) for anything outside the supported action: trading, swaps, other tokens, other chains, yield, lending, bill or card payments, payments split across several recipients, or financial advice.
 - Use NOT_A_REQUEST for greetings, questions about Auctra, or messages that are not asking to move money.`;
 
@@ -84,6 +86,11 @@ const WEEKDAY_WORDS = DAYS_OF_WEEK.map((d) => d[0] + d.slice(1).toLowerCase());
 /** Deterministic: extraction → FinancialIntent, or a clarifying question. Never guesses. */
 export function toFinancialIntent(extraction: Extraction): ParseResult {
   if (extraction.outcome === "NOT_A_REQUEST") return { kind: "not_a_request" };
+  if (extraction.outcome === "SET_BALANCE_FLOOR") {
+    const amount = usdcAmountString.safeParse(extraction.amount ?? "");
+    if (!amount.success) return { kind: "clarify", question: "What is the lowest balance, in USDC, that your wallet should keep?" };
+    return { kind: "set_floor", amount: amount.data };
+  }
   if (extraction.outcome === "UNSUPPORTED") {
     return {
       kind: "unsupported",

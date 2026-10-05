@@ -128,6 +128,7 @@ Balance protection never moves money *into* a wallet (no top-ups). It only block
    - logs in with Privy (Telegram login),
    - chooses an account type: **Individual**, or **Business** with a business name (v2.2),
    - gets an embedded wallet provisioned,
+   - saves at least one destination (v2.2: the Privy policy allowlist can't be empty, so this comes before the signer),
    - reviews the delegation disclosure (§7.2),
    - adds Auctra's session signer, with the Auctra policy attached.
 
@@ -320,6 +321,7 @@ Commands:
 | `/automations` | Active automations |
 | `/new` | Create an automation |
 | `/destinations` | List or add saved destinations (v2.1) |
+| `/run` | Run Now for an active automation (v2.2) |
 | `/pause` | Pause |
 | `/resume` | Resume |
 | `/cancel` | Cancel |
@@ -327,7 +329,7 @@ Commands:
 | `/help` | Supported actions |
 
 Rules:
-- Natural language works without commands.
+- Natural language works without commands. "Never let my wallet fall below X" sets the balance floor after a confirmation button (v2.2).
 - Buttons are reserved for confirmation and high-value actions. Do not build a button-heavy interface.
 - The webhook verifies `X-Telegram-Bot-Api-Secret-Token` against `TELEGRAM_WEBHOOK_SECRET`.
 - **Updates are de-duplicated on `update_id` (v2.1)**, because Telegram retries undelivered updates.
@@ -430,6 +432,7 @@ TELEGRAM_WEBHOOK_SECRET=
 NEXT_PUBLIC_PRIVY_APP_ID=
 PRIVY_APP_SECRET=
 PRIVY_AUTHORIZATION_PRIVATE_KEY=   # v2.1 — app-level session signer key (§7.1)
+PRIVY_SIGNER_ID=                   # v2.2 — key quorum ID of that key; session signer + policy owner
 CRON_SECRET=                       # v2.1 — Vercel Cron bearer token
 
 # TESTNET ONLY
@@ -473,6 +476,9 @@ Statuses are Postgres enums. Amounts are stored as exact decimal strings, or as 
 | `POST /api/automations` | Create a confirmed automation |
 | `GET /api/automations` | List the user's automations |
 | `PATCH /api/automations/:id` | Pause / resume / cancel (no edit in the MVP) |
+| `GET /api/me`, `PATCH /api/settings` | Account summary; timezone and balance floor (v2.2) |
+| `POST /api/onboarding/{link,account,wallet}`, `GET/POST /api/onboarding/signer` | Web onboarding steps (v2.2) |
+| `POST /api/destinations/confirm`, `DELETE /api/destinations/:id` | Confirm a proposed destination; archive one (v2.2) |
 | `POST /api/automations/:id/run` | Manual demo execution (Run Now) |
 | `GET /api/executions` | Execution history (`?format=csv` for export, v2.2) |
 | `GET /api/balance` | Read testnet balance |

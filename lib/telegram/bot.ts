@@ -5,7 +5,8 @@ import { telegramUpdates, users } from "../../db/schema";
 import { parseIntent, type IntentModel } from "../ai/intent-parser";
 import { formatDateTime, formatUsdc } from "../format";
 import { formatUsdcAmount } from "../usdc";
-import { accountDisplayName, createLinkToken, getAccountContext, getOrCreateTelegramUser, type AccountContext } from "../services/accounts";
+import { usdcAmountString } from "../automation-types";
+import { accountDisplayName, createLinkToken, getAccountContext, getOrCreateTelegramUser, updateSettings, type AccountContext } from "../services/accounts";
 import { activateAutomation, changeAutomationStatus, describeAutomation, listAutomations, prepareAutomation, type StatusAction } from "../services/automations";
 import { confirmDestination, describeDestination, DESTINATION_CATEGORIES, listDestinations, proposeDestination, type DestinationCategory } from "../services/destinations";
 import { UserFacingError } from "../services/errors";
@@ -34,6 +35,7 @@ const HELP = [
   "• Save 20 USDC to my savings wallet every Friday at 6 PM",
   "• Pay Acme Hosting 80 USDC on the 1st of every month at 09:00, memo INV hosting",
   "• Send 50 USDC to my reserve every Monday at 10:00 only if my balance is at least 500",
+  "• Never let my wallet fall below 300 USDC",
   "",
   "Commands:",
   "/balance: testnet balances",
@@ -250,6 +252,14 @@ async function handleRequest(deps: BotDeps, chatId: string, ctx: AccountContext 
       await setPending(null);
       await telegram.sendMessage(chatId, result.message);
       return;
+    case "set_floor":
+      await setPending(null);
+      await telegram.sendMessage(
+        chatId,
+        `Set a balance floor of ${formatUsdc(result.amount)} USDC?\nAuctra will skip any transfer that would leave your wallet with less than this. It never moves money in to top it up.`,
+        { inline_keyboard: [[{ text: "Set floor", callback_data: `bf:${result.amount}` }, { text: "Cancel", callback_data: "xx:" }]] }
+      );
+      return;
     case "not_a_request":
       await setPending(null);
       await telegram.sendMessage(chatId, HELP);
@@ -280,7 +290,7 @@ async function handleCallback(deps: BotDeps, callback: NonNullable<TelegramUpdat
   };
 
   try {
-    if (callback.message && chatId && ["ca", "cd", "xx"].includes(prefix)) {
+    if (callback.message && chatId && ["ca", "cd", "bf", "xx"].includes(prefix)) {
       // One tap per confirmation message.
       await telegram.clearKeyboard(chatId, callback.message.message_id).catch(() => undefined);
     }
@@ -299,6 +309,11 @@ async function handleCallback(deps: BotDeps, callback: NonNullable<TelegramUpdat
         const destination = await confirmDestination(db, { confirmationId: id, userId: ctx.user.id, accountId: ctx.account.id });
         await deps.onDestinationsChanged(ctx.account.id);
         return reply(`Saved ${describeDestination(destination)}.`);
+      }
+      case "bf": {
+        if (!usdcAmountString.safeParse(id).success) return reply("That button has expired.");
+        await updateSettings(db, { userId: ctx.user.id, accountId: ctx.account.id, balanceFloor: id });
+        return reply(`Balance floor set to ${formatUsdc(id)} USDC.`);
       }
       case "ap":
       case "ar":
