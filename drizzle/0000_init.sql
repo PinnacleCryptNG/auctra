@@ -146,8 +146,8 @@ ALTER TABLE "executions" ADD CONSTRAINT "executions_account_id_accounts_id_fk" F
 ALTER TABLE "link_tokens" ADD CONSTRAINT "link_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "automations_due_idx" ON "automations" USING btree ("status","next_run_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "destinations_account_label_idx" ON "destinations" USING btree ("account_id","label_key");--> statement-breakpoint
-CREATE UNIQUE INDEX "destinations_account_address_idx" ON "destinations" USING btree ("account_id","address");--> statement-breakpoint
+CREATE UNIQUE INDEX "destinations_account_label_idx" ON "destinations" USING btree ("account_id","label_key") WHERE "destinations"."archived_at" IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "destinations_account_address_idx" ON "destinations" USING btree ("account_id","address") WHERE "destinations"."archived_at" IS NULL;--> statement-breakpoint
 CREATE UNIQUE INDEX "executions_execution_key_idx" ON "executions" USING btree ("execution_key");--> statement-breakpoint
 CREATE INDEX "executions_account_created_idx" ON "executions" USING btree ("account_id","created_at");--> statement-breakpoint
 CREATE INDEX "executions_status_idx" ON "executions" USING btree ("status");

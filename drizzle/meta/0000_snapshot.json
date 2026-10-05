@@ -1,5 +1,5 @@
 {
-  "id": "18d1ef7d-8188-4c3e-96b0-f689b6a34714",
+  "id": "d8098465-9bd7-4d80-9343-e4d9d77ab6f2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -533,6 +533,7 @@
             }
           ],
           "isUnique": true,
+          "where": "\"destinations\".\"archived_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -554,6 +555,7 @@
             }
           ],
           "isUnique": true,
+          "where": "\"destinations\".\"archived_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

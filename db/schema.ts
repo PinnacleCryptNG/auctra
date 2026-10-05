@@ -111,8 +111,9 @@ export const destinations = pgTable(
     createdAt: createdAt()
   },
   (table) => [
-    uniqueIndex("destinations_account_label_idx").on(table.accountId, table.labelKey),
-    uniqueIndex("destinations_account_address_idx").on(table.accountId, table.address)
+    // Archived destinations don't block re-saving the same name or address.
+    uniqueIndex("destinations_account_label_idx").on(table.accountId, table.labelKey).where(sql`${table.archivedAt} IS NULL`),
+    uniqueIndex("destinations_account_address_idx").on(table.accountId, table.address).where(sql`${table.archivedAt} IS NULL`)
   ]
 );
 
