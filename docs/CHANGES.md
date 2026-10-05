@@ -73,3 +73,11 @@ See the v2.1 changelog at the top of `docs/PRD.md`. Summary: session signers + a
 - **Privy specifics still to verify live:** the calldata field names in the policy (`transfer.recipient`, `transfer.amount`), CAIP-2 `eip155:10143` support, the idempotency window, and Telegram login inside a Mini App.
 - **No Playwright E2E tests yet.** Pages were checked with a production build, a smoke test, and screenshots of the landing page.
 - **No multi-member business accounts, approvals or batch payouts** (out of scope, PRD v2.2 §24).
+
+## Round 3: browser sandbox (for trying the product)
+
+| # | Type | Change | Why | Where |
+|---|---|---|---|---|
+| 3.1 | Decision | Added a browser sandbox. It runs the **real** bot, services, scheduler, validation and migrations on PGlite (Postgres in WebAssembly). Only the edges are simulated: Privy (a wallet pre-created with permission granted), the Monad chain (transfers move a local balance; hashes are random and not on chain), the clock (a "jump to next run" button), and Telegram's transport. Built with `npm run demo:build`; the output in `demo/dist` is not committed. | To try the product before Privy, Neon, Telegram and Vercel are configured, without a separate mock implementation. | `demo/` |
+| 3.2 | Decision | In the sandbox, plain-English parsing uses Claude through the claude.ai artifact runtime (the viewer's own account, quick tier), with the same system prompt and the same Zod validation as production. Without it, only the example requests work, using pre-recorded parses, and the page says so. | The production parser calls the Anthropic API with a server key, which a static page can't hold. | `demo/sandbox.ts` |
+| 3.3 | Decision | Browser shims replace `node:crypto` (SHA-256 via `@noble/hashes`, random bytes via Web Crypto) and stub the Anthropic SDK. The PGlite filesystem bundle ships as base64 text. | Browser build; the artifact host serves no raw binary data files. | `demo/shims`, `demo/build.mjs` |

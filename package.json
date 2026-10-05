@@ -12,7 +12,8 @@
     "check:testnet": "tsx scripts/check-testnet-only.ts",
     "spike": "tsx --env-file-if-exists=.env.local scripts/spike.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "demo:build": "node demo/build.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
