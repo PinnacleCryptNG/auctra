@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:testnet": "tsx scripts/check-testnet-only.ts",
+    "spike": "tsx --env-file-if-exists=.env.local scripts/spike.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@neondatabase/serverless": "^1.0.2",
-    "@privy-io/react-auth": "^2.25.0",
+    "@privy-io/node": "^0.35.0",
+    "@privy-io/react-auth": "^3.47.0",
     "drizzle-orm": "^0.44.5",
     "next": "^16.0.0",
     "react": "^19.2.0",
@@ -28,6 +31,7 @@
     "@types/react-dom": "^19.2.0",
     "drizzle-kit": "^0.31.4",
     "tailwindcss": "^4.1.14",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   }
