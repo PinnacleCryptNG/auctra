@@ -52,6 +52,9 @@ export const users = pgTable("users", {
   telegramChatId: text("telegram_chat_id"),
   privyUserId: text("privy_user_id").unique(),
   timezone: text("timezone").default("UTC").notNull(),
+  // Last request awaiting a clarification answer in Telegram (PRD §7.3 "ask, never guess").
+  pendingRequest: text("pending_request"),
+  pendingRequestExpiresAt: timestamp("pending_request_expires_at", { withTimezone: true }),
   createdAt: createdAt()
 });
 

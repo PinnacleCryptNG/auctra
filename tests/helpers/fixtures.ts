@@ -14,7 +14,7 @@ export async function createFixture(
   options: { type?: "INDIVIDUAL" | "BUSINESS"; timezone?: string; signer?: boolean } = {}
 ) {
   counter += 1;
-  const user = await getOrCreateTelegramUser(db, { telegramId: `tg-${counter}`, chatId: `chat-${counter}` });
+  const user = await getOrCreateTelegramUser(db, { telegramId: String(1000 + counter), chatId: String(1000 + counter) });
   const account = await createAccount(db, {
     userId: user.id,
     type: options.type ?? "INDIVIDUAL",
