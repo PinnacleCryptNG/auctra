@@ -1,11 +1,7 @@
 import { ConfirmationCard } from "@/components/auctra/confirmation-card";
-import { Logo } from "@/components/auctra/logo";
-import { ButtonLink, IconArrowRight, IconCheck, IconShield, TestnetBadge } from "@/components/ui";
+import { SiteFooter, SiteHeader, START_HREF, START_LABEL } from "@/components/auctra/site-chrome";
+import { ButtonLink, IconArrowRight, IconCheck, IconShield, IconSkip, IconX, TestnetBadge } from "@/components/ui";
 import type { AutomationPreview } from "@/lib/client/api";
-
-const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-const START = BOT ? `https://t.me/${BOT}` : "/dashboard";
-const START_LABEL = BOT ? "Start in Telegram" : "Try Auctra";
 
 // A realistic example, rendered with the same component users confirm with.
 const EXAMPLE: AutomationPreview = {
@@ -23,168 +19,260 @@ const EXAMPLE: AutomationPreview = {
   wallet: { address: "0x8A4e2c9D17b3F6a0E5c8d1B2a3F4e5D6c7B8a91F" }
 };
 
-const STEPS = [
-  { title: "Say it in plain words", text: "Tell Auctra what should happen, in Telegram or on the web. Amount, recipient, when, and any condition." },
-  { title: "Check what Auctra understood", text: "You see the exact amount, schedule, recipient and network as clear fields. Nothing runs until you confirm." },
-  { title: "Auctra runs it on time", text: "Each run checks your balance and limits first, then sends. You get a message with the result every time." }
+const COMMANDS = [
+  "Save 20 USDC every Friday at 6 PM",
+  "Pay rent on the 1st",
+  "Only send if I have more than 300",
+  "Pay Ada 100 USDC every Friday",
+  "Sweep 50 to reserve each Monday",
+  "Never let my wallet drop below 300",
+  "Pay the design studio 80 monthly, memo INV-2041"
 ];
 
-const SEGMENTS = [
+const STEPS = [
   {
-    title: "For individuals",
-    items: ["Save 20 USDC every Friday at 6 PM", "Pay rent on the 1st of every month", "Only send if my balance is above 300 USDC", "Never let my wallet fall below 300 USDC"]
+    tag: "You say",
+    title: "Write it like a text message",
+    text: "Amount, who, when, and any condition. In Telegram or on the web. No forms, no cron syntax."
   },
   {
-    title: "For businesses",
-    items: ["Pay a vendor 80 USDC monthly, with an invoice memo", "Pay a contractor 100 USDC every Friday", "Sweep 50 USDC to reserve each Monday above 500", "Keep at least 1,000 USDC in the operating wallet"]
+    tag: "You check",
+    title: "See exactly what Auctra heard",
+    text: "Amount, schedule, recipient and network come back as plain fields. Nothing runs until you tap confirm."
+  },
+  {
+    tag: "It runs",
+    title: "Auctra keeps the promise",
+    text: "Before every run it checks your balance and limits, then sends. You get a receipt each time."
   }
 ];
 
+const USE_CASES = [
+  {
+    who: "For you",
+    title: "Saving that doesn't depend on willpower",
+    items: ["Save 20 USDC every Friday at 6 PM", "Pay rent on the 1st of every month", "Only send if my balance is above 300", "Keep a 300 USDC floor in my wallet"],
+    tone: "signal" as const
+  },
+  {
+    who: "For your business",
+    title: "Payables that pay themselves",
+    items: ["Pay a vendor 80 USDC monthly with an invoice memo", "Pay a contractor 100 USDC every Friday", "Sweep 50 USDC to reserve each Monday", "Hold 1,000 USDC in the operating wallet"],
+    tone: "flare" as const
+  }
+];
+
+const RECEIPTS = [
+  { when: "Fri 18:00", what: "Sent 20 USDC to Savings wallet", status: "Sent", icon: <IconCheck />, tone: "bg-signal text-obsidian" },
+  { when: "Mon 09:00", what: "Skipped: balance was 240, rule says above 300", status: "Skipped", icon: <IconSkip />, tone: "bg-amber-soft text-amber-ink" },
+  { when: "Tue 12:00", what: "Blocked: over your 100 USDC daily limit", status: "Blocked", icon: <IconX />, tone: "bg-flare-soft text-flare-ink" }
+];
+
 const SAFETY = [
-  "Auctra never asks for your seed phrase or private key. You keep your own wallet.",
-  "It can only send USDC to destinations you've saved, within per-transfer and daily limits.",
-  "Those limits are enforced twice: by Auctra and by your wallet provider.",
-  "Every run ends as sent, skipped or blocked, and you're told which and why."
+  { title: "Your keys stay yours", text: "Auctra never asks for a seed phrase or private key. Your wallet lives with you." },
+  { title: "Saved recipients only", text: "Money can only go to destinations you added yourself, never to an address a message invents." },
+  { title: "Limits, enforced twice", text: "Per-transfer and daily caps are checked by Auctra and again by your wallet provider." },
+  { title: "Every run has an answer", text: "Sent, skipped or blocked, always with the reason. No silent failures." }
 ];
 
 export default function Home() {
   return (
     <div className="min-h-dvh bg-cloud">
-      <div className="bg-obsidian text-cloud">
-        <header className="mx-auto flex max-w-[76rem] items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-10">
-          <Logo tone="light" />
-          <nav aria-label="Primary" className="flex items-center gap-2">
-            <a href="#how" className="hidden min-h-10 items-center rounded-[6px] px-3 text-sm text-cloud/70 hover:text-cloud md:inline-flex">
-              How it works
-            </a>
-            <a href="#safety" className="hidden min-h-10 items-center rounded-[6px] px-3 text-sm text-cloud/70 hover:text-cloud md:inline-flex">
-              Security
-            </a>
-            <ButtonLink href="/dashboard" size="sm" variant="on-dark">
-              Sign in
-            </ButtonLink>
-          </nav>
-        </header>
+      {/* Hero */}
+      <div className="bg-grain relative overflow-hidden bg-obsidian text-cloud">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-40 -right-40 size-[34rem] rounded-full bg-flare/25 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-56 -left-40 size-[30rem] rounded-full bg-signal/15 blur-3xl" />
+        <div className="relative">
+          <SiteHeader tone="dark" />
+          <main id="main">
+            <section className="mx-auto grid max-w-[78rem] items-center gap-12 px-4 pt-8 pb-20 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,27rem)] lg:gap-16 lg:px-10 lg:pt-20 lg:pb-28">
+              <div className="grid gap-7">
+                <p className="inline-flex w-fit items-center gap-2 rounded-full border border-cloud/15 bg-obsidian-2/70 py-1 pr-3.5 pl-1.5 text-sm text-cloud/80">
+                  <span className="rounded-full bg-signal px-2 py-0.5 text-xs font-semibold text-obsidian">New</span>
+                  An autonomous agent for your USDC
+                </p>
+                <h1 className="text-display max-w-[13ch]">
+                  Money that <span className="accent-italic">moves itself.</span>
+                </h1>
+                <p className="max-w-[34rem] text-[1.0625rem] leading-relaxed text-cloud/75">
+                  Tell Auctra what should happen to your money in one sentence. It shows you exactly what it understood, then pays, saves and
+                  sweeps on schedule, inside limits only you can change.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <ButtonLink href={START_HREF} size="lg" icon={<IconArrowRight />} className="flex-row-reverse shadow-[4px_4px_0_0_var(--color-flare)]">
+                    {START_LABEL}
+                  </ButtonLink>
+                  <ButtonLink href="/#how" size="lg" variant="on-dark">
+                    See how it works
+                  </ButtonLink>
+                </div>
+                <p className="flex flex-wrap items-center gap-2 text-sm text-cloud/60">
+                  <TestnetBadge /> Live on Monad Testnet with test USDC, so no real money is at risk.
+                </p>
+              </div>
 
-        <main id="main">
-          <section className="mx-auto grid max-w-[76rem] items-center gap-10 px-4 pt-8 pb-16 sm:px-6 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-16 lg:px-10 lg:pt-16 lg:pb-24">
-            <div className="grid gap-6">
-              <p className="text-meta text-cloud/60">Autonomous financial agent</p>
-              <h1 className="text-display max-w-[14ch]">Tell Auctra what you want your money to do.</h1>
-              <p className="max-w-[34rem] text-[1.0625rem] leading-relaxed text-cloud/75">
-                Set up recurring and conditional USDC transfers by describing them in plain words. Auctra shows you exactly what it will
-                do, then handles every run on schedule, for you or your business.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <ButtonLink href={START} size="lg" icon={<IconArrowRight />} className="flex-row-reverse">
-                  {START_LABEL}
-                </ButtonLink>
-                <ButtonLink href="/dashboard" size="lg" variant="on-dark">
-                  Open dashboard
-                </ButtonLink>
-              </div>
-              <p className="flex flex-wrap items-center gap-2 text-sm text-cloud/60">
-                <TestnetBadge /> Runs on Monad Testnet with test USDC only.
-              </p>
-            </div>
-
-            <figure className="grid gap-3" aria-label="Example: a request and Auctra's confirmation">
-              <div className="ml-auto max-w-[85%] rounded-[var(--radius-card)] rounded-br-[4px] bg-[#2b5278] px-4 py-2.5 text-[0.9375rem] text-cloud">
-                Save 20 USDC to my savings wallet every Friday at 6 PM.
-              </div>
-              <div className="text-ink">
-                <ConfirmationCard preview={EXAMPLE} />
-              </div>
-              <figcaption className="flex items-center gap-2 text-sm text-cloud/70">
-                <IconCheck className="text-signal" />
-                You confirm once. Auctra handles every Friday after that.
-              </figcaption>
-            </figure>
-          </section>
-        </main>
+              <figure className="relative grid gap-3" aria-label="Example: a request and Auctra's confirmation">
+                <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-[6px] bg-flare px-4 py-2.5 text-[0.9375rem] font-medium text-obsidian">
+                  Save 20 USDC to my savings wallet every Friday at 6 PM.
+                </div>
+                <div className="rotate-[-1.2deg] rounded-[var(--radius-surface)] bg-cloud p-1.5 text-ink shadow-[8px_8px_0_0_var(--color-signal)] transition-transform duration-300 hover:rotate-0">
+                  <ConfirmationCard preview={EXAMPLE} />
+                </div>
+                <figcaption className="mt-2 flex items-center gap-2 text-sm text-cloud/70">
+                  <IconCheck className="text-signal" />
+                  Confirm once. Every Friday after that is handled.
+                </figcaption>
+              </figure>
+            </section>
+          </main>
+        </div>
       </div>
 
-      <section id="how" aria-labelledby="how-heading" className="mx-auto max-w-[76rem] px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
-        <h2 id="how-heading" className="text-h1">
-          How it works
-        </h2>
-        <ol className="mt-8 grid gap-4 md:grid-cols-3">
-          {STEPS.map((step, index) => (
-            <li key={step.title} className="rounded-[var(--radius-card)] border border-line bg-surface p-5">
-              <span className="text-data text-slate">0{index + 1}</span>
-              <h3 className="mt-3 text-h2">{step.title}</h3>
-              <p className="mt-2 text-secondary">{step.text}</p>
-            </li>
+      {/* Command marquee */}
+      <section aria-label="Things people ask Auctra to do" className="overflow-hidden border-y-2 border-obsidian bg-signal py-4 text-obsidian">
+        <div className="flex w-max animate-marquee gap-10 motion-reduce:animate-none">
+          {[...COMMANDS, ...COMMANDS].map((command, index) => (
+            <span
+              key={`${command}-${index}`}
+              aria-hidden={index >= COMMANDS.length || undefined}
+              className="flex items-center gap-10 font-display text-xl whitespace-nowrap italic [font-variation-settings:'SOFT'_100,'WONK'_1]"
+            >
+              “{command}”
+              <span aria-hidden="true" className="size-2.5 rounded-full bg-flare" />
+            </span>
           ))}
-        </ol>
+        </div>
       </section>
 
-      <section aria-labelledby="who-heading" className="border-y border-line bg-surface">
-        <div className="mx-auto max-w-[76rem] px-4 py-16 sm:px-6 lg:px-10 lg:py-20">
-          <h2 id="who-heading" className="text-h1">
-            Built for people and the businesses they run
+      {/* How it works */}
+      <section id="how" aria-labelledby="how-heading" className="bg-ledger scroll-mt-4">
+        <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end">
+            <h2 id="how-heading" className="text-h1 max-w-[18ch] sm:text-[2.75rem]">
+              Three steps. <span className="accent-italic">Then never again.</span>
+            </h2>
+            <p className="text-body text-ink-2">
+              Auctra reads your request with AI, but every transfer is checked and sent by plain rules you can see and edit.
+            </p>
+          </div>
+          <ol className="mt-12 grid gap-5 md:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <li
+                key={step.title}
+                className="group relative rounded-[var(--radius-surface)] border-2 border-obsidian bg-surface p-6 shadow-pop transition-transform duration-200 hover:-translate-y-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-obsidian px-3 py-1 text-xs font-semibold tracking-wide text-cloud uppercase">{step.tag}</span>
+                  <span className="font-display text-5xl leading-none text-flare italic [font-variation-settings:'SOFT'_100,'WONK'_1]">
+                    {index + 1}
+                  </span>
+                </div>
+                <h3 className="mt-8 font-display text-2xl leading-tight font-medium tracking-[-0.01em]">{step.title}</h3>
+                <p className="mt-3 text-secondary">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* Use cases */}
+      <section id="use-cases" aria-labelledby="use-cases-heading" className="scroll-mt-4 bg-surface">
+        <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
+          <p className="text-meta">Use cases</p>
+          <h2 id="use-cases-heading" className="text-h1 mt-3 max-w-[22ch] sm:text-[2.75rem]">
+            For your pocket, and for <span className="accent-italic">your payroll.</span>
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {SEGMENTS.map((segment) => (
-              <div key={segment.title} className="rounded-[var(--radius-card)] border border-line p-5">
-                <h3 className="text-h2">{segment.title}</h3>
-                <ul className="mt-4 grid gap-3">
-                  {segment.items.map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-[0.9375rem] text-ink-2">
-                      <IconCheck className="mt-1 shrink-0 text-signal-ink" />
-                      <span>{item}</span>
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            {USE_CASES.map((useCase) => (
+              <article
+                key={useCase.who}
+                className={`relative overflow-hidden rounded-[var(--radius-surface)] p-7 sm:p-9 ${
+                  useCase.tone === "signal" ? "bg-signal text-obsidian" : "bg-obsidian text-cloud"
+                }`}
+              >
+                <p className={`text-xs font-semibold tracking-[0.12em] uppercase ${useCase.tone === "signal" ? "text-obsidian/70" : "text-flare"}`}>
+                  {useCase.who}
+                </p>
+                <h3 className="mt-3 max-w-[16ch] font-display text-3xl leading-[1.05] font-medium tracking-[-0.02em]">{useCase.title}</h3>
+                <ul className="mt-7 grid gap-2.5">
+                  {useCase.items.map((item) => (
+                    <li
+                      key={item}
+                      className={`flex items-start gap-3 rounded-2xl px-4 py-3 text-[0.9375rem] ${
+                        useCase.tone === "signal" ? "bg-obsidian/[0.07]" : "bg-cloud/[0.07]"
+                      }`}
+                    >
+                      <IconCheck className={`mt-1 shrink-0 ${useCase.tone === "signal" ? "text-obsidian" : "text-signal"}`} />
+                      <span>“{item}”</span>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="safety" aria-labelledby="safety-heading" className="mx-auto max-w-[76rem] px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-16">
-          <div className="grid content-start gap-3">
-            <span className="grid size-11 place-items-center rounded-[var(--radius-control)] bg-obsidian text-xl text-signal">
+      {/* Safety */}
+      <section id="safety" aria-labelledby="safety-heading" className="scroll-mt-4">
+        <div className="mx-auto grid max-w-[78rem] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-10 lg:py-28">
+          <div className="grid content-start gap-5">
+            <span className="grid size-12 place-items-center rounded-2xl bg-obsidian text-xl text-signal">
               <IconShield />
             </span>
-            <h2 id="safety-heading" className="text-h1">
-              Your money moves only the way you said
+            <h2 id="safety-heading" className="text-h1 max-w-[16ch] sm:text-[2.75rem]">
+              Your money moves <span className="accent-italic">only</span> the way you said.
             </h2>
-            <p className="text-secondary">Auctra reads requests with AI, but every transfer is checked and sent by deterministic rules you can see.</p>
+            <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2">
+              {SAFETY.map((item) => (
+                <div key={item.title} className="bg-surface p-5">
+                  <h3 className="text-h3">{item.title}</h3>
+                  <p className="mt-1.5 text-secondary">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <ul className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line">
-            {SAFETY.map((item) => (
-              <li key={item} className="flex items-start gap-3 bg-surface p-5 text-[0.9375rem]">
-                <IconCheck className="mt-1 shrink-0 text-signal-ink" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+
+          <figure aria-label="Example run receipts" className="self-center">
+            <div className="rounded-[var(--radius-surface)] border-2 border-obsidian bg-surface p-5 shadow-pop sm:p-7">
+              <div className="flex items-center justify-between border-b border-dashed border-line pb-4">
+                <p className="font-display text-xl font-medium">This week&apos;s receipts</p>
+                <span className="text-data text-slate">3 runs</span>
+              </div>
+              <ul className="divide-y divide-dashed divide-line">
+                {RECEIPTS.map((receipt) => (
+                  <li key={receipt.when} className="flex items-center gap-4 py-4">
+                    <span className={`grid size-10 shrink-0 place-items-center rounded-full text-lg ${receipt.tone}`}>{receipt.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[0.9375rem] font-medium">{receipt.what}</p>
+                      <p className="text-data text-slate">{receipt.when}</p>
+                    </div>
+                    <span className="hidden text-xs font-semibold tracking-wide text-slate uppercase sm:inline">{receipt.status}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <figcaption className="mt-4 text-center text-sm text-slate">A skipped or blocked run is the rule working, and you&apos;re told why.</figcaption>
+          </figure>
         </div>
       </section>
 
-      <section className="bg-obsidian text-cloud">
-        <div className="mx-auto flex max-w-[76rem] flex-col items-start gap-6 px-4 py-14 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
-          <h2 className="text-h1 max-w-[24ch]">Describe it once. Auctra handles the rest.</h2>
-          <ButtonLink href={START} size="lg" icon={<IconArrowRight />} className="flex-row-reverse">
-            {START_LABEL}
-          </ButtonLink>
+      {/* Final CTA */}
+      <section className="px-4 pb-20 sm:px-6 lg:px-10">
+        <div className="relative mx-auto max-w-[78rem] overflow-hidden rounded-[32px] bg-flare px-6 py-14 text-obsidian sm:px-12 sm:py-20">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -bottom-24 size-80 rounded-full border-[40px] border-obsidian/10" />
+          <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between">
+            <h2 className="max-w-[16ch] font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] leading-[1] font-medium tracking-[-0.03em] [font-variation-settings:'SOFT'_100,'WONK'_1]">
+              Say it once. <em className="italic">Auctra remembers.</em>
+            </h2>
+            <ButtonLink href={START_HREF} size="lg" variant="dark" icon={<IconArrowRight />} className="flex-row-reverse">
+              {START_LABEL}
+            </ButtonLink>
+          </div>
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-[76rem] flex-col gap-3 px-4 py-8 text-sm text-slate sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-        <Logo />
-        <p>Testnet software. Auctra moves test USDC on Monad Testnet only. Not financial advice.</p>
-        <nav aria-label="Legal" className="flex gap-4">
-          <a href="/privacy" className="hover:text-ink">
-            Privacy
-          </a>
-          <a href="/terms" className="hover:text-ink">
-            Terms
-          </a>
-        </nav>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

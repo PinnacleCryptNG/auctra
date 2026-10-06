@@ -8,26 +8,26 @@ type Variant = "primary" | "secondary" | "ghost" | "danger" | "danger-ghost" | "
 type Size = "sm" | "md" | "lg";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-medium whitespace-nowrap select-none " +
-  "transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] " +
+  "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-semibold tracking-[-0.005em] whitespace-nowrap select-none " +
+  "transition-[background-color,border-color,color,transform,box-shadow] duration-150 active:scale-[0.98] " +
   "disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-signal text-obsidian hover:bg-[#2cc172]",
-  secondary: "border border-line bg-surface text-ink hover:border-slate/50 hover:bg-cloud",
+  primary: "bg-signal text-obsidian ring-1 ring-obsidian/10 ring-inset hover:bg-signal-strong",
+  secondary: "border border-obsidian/15 bg-surface text-ink hover:border-obsidian/40 hover:bg-cloud",
   ghost: "text-ink-2 hover:bg-slate-soft hover:text-ink",
   danger: "border border-danger/40 bg-surface text-danger-ink hover:bg-danger-soft",
   "danger-ghost": "text-danger-ink hover:bg-danger-soft",
   dark: "bg-obsidian text-cloud hover:bg-obsidian-2",
   /** Outline button for obsidian surfaces (landing hero). */
-  "on-dark": "border border-obsidian-line text-cloud hover:border-slate hover:bg-obsidian-2"
+  "on-dark": "border border-cloud/25 text-cloud hover:border-cloud/60 hover:bg-obsidian-2"
 };
 
 // Minimum 40px (sm) / 44px (md, lg) tall for comfortable touch targets.
 const sizes: Record<Size, string> = {
-  sm: "min-h-10 px-3 text-sm",
-  md: "min-h-11 px-4 text-sm",
-  lg: "min-h-12 px-5 text-[0.9375rem]"
+  sm: "min-h-10 px-4 text-sm",
+  md: "min-h-11 px-5 text-sm",
+  lg: "min-h-13 px-6 text-[0.9375rem]"
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {

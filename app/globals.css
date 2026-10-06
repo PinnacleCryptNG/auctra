@@ -1,52 +1,67 @@
 @import "tailwindcss";
 
 /*
- * Auctra design tokens (PRD §14). See docs/DESIGN.md.
- * Core palette is fixed; the "-ink" shades are darker versions of the same
- * hues, used only for text and icons on light surfaces so they meet WCAG AA.
+ * Auctra design tokens. See docs/DESIGN.md.
+ * "Ledger & Flare": warm paper, deep aubergine ink, a chartreuse signal for
+ * the primary action and success, and a vermilion flare for emphasis.
+ * Token names are kept stable; the "-ink" shades are the text-safe versions
+ * of each hue (WCAG AA on paper and on their "-soft" tints).
  */
 @theme {
   /* Core palette */
-  --color-obsidian: #0b0d0f;
-  --color-signal: #35d07f;
-  --color-amber: #f2b84b;
-  --color-danger: #ef5b5b;
-  --color-cloud: #f5f6f4;
-  --color-slate: #667078;
-  --color-line: #dce1de;
+  --color-obsidian: #1b1433;
+  --color-signal: #c5f04a;
+  --color-flare: #ff5c35;
+  --color-amber: #f5b83d;
+  --color-danger: #e5484d;
+  --color-cloud: #f5efe4;
+  --color-slate: #675f73;
+  --color-line: #e4d9c6;
 
   /* Derived (same hues) */
-  --color-surface: #ffffff;
-  --color-ink: #0b0d0f;
-  --color-ink-2: #3a4146;
-  --color-signal-ink: #157a46;
-  --color-signal-soft: #e6f8ee;
+  --color-surface: #fffcf7;
+  --color-ink: #1b1433;
+  --color-ink-2: #463f57;
+  --color-signal-ink: #3e6b00;
+  --color-signal-soft: #eef9cc;
+  --color-signal-strong: #b2e02c;
+  --color-flare-ink: #b8360f;
+  --color-flare-text: #e4461e;
+  --color-flare-soft: #ffe6dc;
   --color-amber-ink: #8a5a00;
-  --color-amber-soft: #fdf4e2;
+  --color-amber-soft: #fdf1da;
   --color-danger-ink: #b42f2f;
-  --color-danger-soft: #fdecec;
-  --color-slate-soft: #eceeec;
-  --color-obsidian-2: #15181b;
-  --color-obsidian-line: #262b30;
+  --color-danger-soft: #fdeaea;
+  --color-slate-soft: #eee6d7;
+  --color-obsidian-2: #261e42;
+  --color-obsidian-line: #3b3259;
 
   /* Type */
-  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Geometry */
-  --radius-control: 8px;
-  --radius-input: 10px;
-  --radius-card: 12px;
-  --radius-surface: 16px;
+  /* Geometry: pill controls, soft cards */
+  --radius-control: 999px;
+  --radius-input: 12px;
+  --radius-card: 18px;
+  --radius-surface: 24px;
 
-  --shadow-card: 0 1px 2px rgb(11 13 15 / 0.04);
-  --shadow-overlay: 0 12px 40px rgb(11 13 15 / 0.18);
+  --shadow-card: 0 1px 0 rgb(27 20 51 / 0.04), 0 8px 24px -16px rgb(27 20 51 / 0.18);
+  --shadow-overlay: 0 24px 60px -12px rgb(27 20 51 / 0.35);
+  --shadow-pop: 4px 4px 0 0 var(--color-obsidian);
 
-  --animate-enter: enter 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-sheet: sheet 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-enter: enter 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sheet: sheet 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-spin: spin 800ms linear infinite;
+  --animate-orbit: spin 18s linear infinite;
+  --animate-marquee: marquee 40s linear infinite;
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 @keyframes enter {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
@@ -58,17 +73,21 @@
 
 /* Type scale: one utility per role (docs/DESIGN.md). */
 @utility text-display {
-  font-size: clamp(2.125rem, 1.4rem + 3.2vw, 4rem);
-  line-height: 1.05;
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 1.5rem + 4.4vw, 5.5rem);
+  line-height: 0.98;
+  font-weight: 500;
+  font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 @utility text-h1 {
-  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
-  line-height: 1.2;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  font-size: clamp(1.625rem, 1.3rem + 1.2vw, 2.25rem);
+  line-height: 1.1;
+  font-weight: 500;
+  font-variation-settings: "SOFT" 100, "opsz" 72;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 @utility text-h2 {
@@ -106,6 +125,8 @@
   letter-spacing: 0;
 }
 @utility text-amount {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 50, "opsz" 96;
   font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
   line-height: 1.1;
   font-weight: 600;
@@ -129,7 +150,7 @@
     font-size: 0.9375rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: "ss01";
   }
   * {
     box-sizing: border-box;
@@ -140,7 +161,8 @@
     border-radius: 4px;
   }
   ::selection {
-    background: var(--color-signal-soft);
+    background: var(--color-signal);
+    color: var(--color-obsidian);
   }
   [hidden] {
     display: none !important;
@@ -154,4 +176,22 @@
       transition-duration: 1ms !important;
     }
   }
+}
+
+/* Emphasis inside serif headings: italic flare. */
+@utility accent-italic {
+  font-style: italic;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  color: var(--color-flare-text);
+}
+
+/* Faint ledger rules, used behind marketing sections. */
+@utility bg-ledger {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgb(27 20 51 / 0.06) 31px 32px);
+}
+
+/* Fine grain over dark bands so they don't read as flat black. */
+@utility bg-grain {
+  background-image: radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 4px 4px;
 }

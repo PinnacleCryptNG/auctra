@@ -45,8 +45,8 @@ export default function OnboardingPage() {
 
 function Shell({ step, children }: { step: number | null; children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh">
-      <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6">
+    <div className="bg-ledger min-h-dvh">
+      <header className="flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-3 backdrop-blur-md sm:px-6">
         <Logo />
         <TestnetBadge />
       </header>
@@ -58,7 +58,7 @@ function Shell({ step, children }: { step: number | null; children: React.ReactN
                 const state = index < step ? "done" : index === step ? "current" : "todo";
                 return (
                   <li key={label} aria-current={state === "current" ? "step" : undefined} className="grid gap-2">
-                    <span className={`h-1 rounded-full ${state === "todo" ? "bg-line" : "bg-signal"}`} />
+                    <span className={`h-1 rounded-full ${state === "todo" ? "bg-line" : state === "current" ? "bg-flare" : "bg-signal-strong"}`} />
                     <span className={`flex items-center gap-1 text-xs ${state === "todo" ? "text-slate" : "font-medium text-ink"}`}>
                       {state === "done" && <IconCheck className="text-signal-ink" />}
                       <span className="truncate">{label}</span>

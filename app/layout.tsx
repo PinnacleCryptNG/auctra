@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/inter";
+import "@fontsource-variable/instrument-sans";
+import "@fontsource-variable/fraunces/full.css";
+import "@fontsource-variable/fraunces/full-italic.css";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import { siteUrl } from "@/lib/site";
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "Auctra — Autonomous Financial Agent", description: DESCRIPTION }
 };
 
-export const viewport: Viewport = { themeColor: "#0B0D0F", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#1B1433", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

@@ -130,7 +130,7 @@ export function ConfirmDialog({
             aria-busy={busy || undefined}
             onClick={onConfirm}
             className={`min-h-11 rounded-[var(--radius-control)] px-4 text-sm font-medium disabled:opacity-50 ${
-              tone === "danger" ? "bg-danger-ink text-surface hover:bg-[#9b2626]" : "bg-signal text-obsidian hover:bg-[#2cc172]"
+              tone === "danger" ? "bg-danger-ink text-surface hover:bg-danger" : "bg-signal text-obsidian hover:bg-signal-strong"
             }`}
           >
             {busy ? "Working…" : confirmLabel}

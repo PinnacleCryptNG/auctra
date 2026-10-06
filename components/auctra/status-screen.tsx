@@ -5,7 +5,7 @@ import { Logo } from "./logo";
 /** Full-page centred state: sign in, loading, setup needed, configuration errors. */
 export function StatusScreen({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="bg-ledger flex min-h-dvh flex-col">
       <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Logo />
         <TestnetBadge />

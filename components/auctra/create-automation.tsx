@@ -150,7 +150,7 @@ export function CreateAutomationDialog() {
                   <button
                     type="button"
                     onClick={() => setText(example)}
-                    className="w-full rounded-[var(--radius-control)] border border-line px-3 py-2.5 text-left text-sm text-ink-2 hover:border-slate/50 hover:bg-cloud"
+                    className="w-full rounded-[var(--radius-input)] border border-line px-3 py-2.5 text-left text-sm text-ink-2 hover:border-slate/50 hover:bg-cloud"
                   >
                     {example}
                   </button>
