@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { Address, Button, IconActivity, IconHome, IconLogout, IconPlus, IconRepeat, IconSettings } from "@/components/ui";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { CreateAutomationDialog } from "./create-automation";
+import { ChainChip } from "./chain-chip";
 import { Logo } from "./logo";
 
 const NAV = [
@@ -39,8 +40,9 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
 
       {/* Desktop sidebar */}
       <aside className="bg-grain sticky top-0 hidden h-dvh flex-col bg-obsidian text-cloud lg:flex">
-        <div className="px-5 pt-5 pb-4">
+        <div className="grid justify-items-start gap-3 px-5 pt-5 pb-4">
           <Logo href="/dashboard" tone="light" />
+          <ChainChip tone="dark" />
         </div>
         <div className="px-4">
           <Button className="w-full" icon={<IconPlus />} onClick={() => openCreate()}>
@@ -90,6 +92,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-2 backdrop-blur-md pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
           <Logo href="/dashboard" />
           <div className="flex items-center gap-2">
+            <ChainChip className="hidden min-[360px]:inline-flex" />
             <Button size="sm" icon={<IconPlus />} onClick={() => openCreate()} aria-label="Create automation">
               <span className="hidden min-[400px]:inline">Create</span>
             </Button>

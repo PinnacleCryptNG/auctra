@@ -20,7 +20,8 @@ export function errorResponse(error: unknown) {
     );
   }
   if (error instanceof UserFacingError) {
-    return NextResponse.json({ error: { code: error.code, message: error.message } }, { status: error.code === "NOT_FOUND" ? 404 : 400 });
+    const status = error.code === "NOT_FOUND" ? 404 : error.code === "AI_UNAVAILABLE" ? 503 : 400;
+    return NextResponse.json({ error: { code: error.code, message: error.message } }, { status });
   }
   if (error instanceof ZodError) {
     return NextResponse.json({ error: { code: "INVALID_REQUEST", message: error.issues[0]?.message ?? "Invalid request." } }, { status: 400 });
