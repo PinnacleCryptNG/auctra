@@ -22,11 +22,10 @@ export default function OpengraphImage() {
             <span>Money that&nbsp;</span>
             <span style={{ color: "#FF5C35", fontStyle: "italic" }}>moves itself.</span>
           </div>
-          <div style={{ fontSize: 34, color: "rgba(245,239,228,0.72)" }}>Describe a USDC transfer once. Auctra runs it, within limits you set.</div>
+          <div style={{ fontSize: 34, color: "rgba(245,239,228,0.72)" }}>Say it once. Auctra runs it.</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ display: "flex", background: "#C5F04A", color: "#1B1433", fontSize: 26, fontWeight: 700, padding: "10px 22px", borderRadius: 999 }}>Monad Testnet</div>
-          <div style={{ display: "flex", fontSize: 26, color: "rgba(245,239,228,0.6)" }}>Works in Telegram and on the web</div>
+          <div style={{ display: "flex", background: "#C5F04A", color: "#1B1433", fontSize: 26, fontWeight: 700, padding: "10px 22px", borderRadius: 999 }}>Telegram + web</div>
         </div>
       </div>
     ),

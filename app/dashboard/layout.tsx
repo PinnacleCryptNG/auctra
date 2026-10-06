@@ -37,7 +37,7 @@ function AuthGate({ children }: { children: ReactNode }) {
           <div className="grid gap-5">
             <div className="grid gap-2">
               <h1 className="text-h1">Sign in to Auctra</h1>
-              <p className="text-secondary">See your balance, your automations and every transfer Auctra has made. Auctra never asks for your seed phrase or private key.</p>
+              <p className="text-secondary">Your money, on autopilot.</p>
             </div>
             <Button size="lg" onClick={login} className="w-full">
               Sign in
@@ -83,8 +83,8 @@ function AccountGate({ children }: { children: ReactNode }) {
               <h1 className="text-h1">{readiness === "account_needed" ? "Finish setting up" : "Connect your Auctra Wallet"}</h1>
               <p className="text-secondary">
                 {readiness === "account_needed"
-                  ? "Choose your account type and connect your Auctra Wallet to start creating automations."
-                  : "Your account is ready. Connect your Auctra Wallet on Monad Testnet to continue."}
+                  ? "A few quick steps and you're in."
+                  : "Connect your Auctra Wallet to continue."}
               </p>
             </div>
             <ButtonLink href="/onboarding" size="lg" className="w-full">

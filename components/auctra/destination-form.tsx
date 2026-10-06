@@ -76,7 +76,7 @@ export function DestinationForm({
       <div className="grid gap-4">
         <div className="grid gap-1">
           <p className="text-h3">Check the address</p>
-          <p className="text-secondary">Transfers can&apos;t be reversed. Make sure every character matches the wallet you expect.</p>
+          <p className="text-secondary">Transfers can&apos;t be undone. Double-check the address.</p>
         </div>
         <dl className="grid gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4 text-sm">
           <div className="grid gap-0.5">

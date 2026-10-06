@@ -108,7 +108,7 @@ export function CreateAutomationDialog() {
         }}
         className="grid gap-4"
       >
-        <Field label="What should Auctra do?" hint="Include the amount, a saved destination, and when. Auctra shows you exactly what it understood before anything is set up.">
+        <Field label="What should Auctra do?" hint="Amount, who and when. You confirm first.">
           {(p) => (
             <Textarea
               {...p}

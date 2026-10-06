@@ -1,6 +1,6 @@
 "use client";
 
-import { Address, Badge, ButtonLink, Card, ErrorState, Button, IconShield, IconWallet, Skeleton, TestnetBadge } from "@/components/ui";
+import { Address, Badge, ButtonLink, Card, ErrorState, Button, IconWallet, Skeleton } from "@/components/ui";
 import { friendlyError, type Balance, type Me } from "@/lib/client/api";
 import { formatUsdc } from "@/lib/client/format";
 import { permissionCopy } from "@/lib/client/readiness";
@@ -46,9 +46,7 @@ export function WalletSummary({
             <p className="text-amount">
               {formatUsdc(balance?.usdc ?? "0")} <span className="text-[0.55em] font-medium text-ink-2">USDC</span>
             </p>
-            <p className="text-secondary">
-              Test funds on Monad Testnet{balance ? ` · ${Number(balance.mon).toFixed(2)} MON for network fees` : ""}
-            </p>
+            {balance && <p className="text-secondary">{Number(balance.mon).toFixed(2)} MON for fees</p>}
           </>
         )}
       </div>
@@ -60,12 +58,11 @@ export function WalletSummary({
         <div className="grid min-w-0 flex-1 gap-0.5">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-h3">Auctra Wallet</span>
-            <Badge tone="success" icon={<IconShield />}>Connected</Badge>
             {!granted && copy && <Badge tone="warning">{copy.badge}</Badge>}
           </span>
           {me.wallet && <Address value={me.wallet.address} label="Wallet address" />}
         </div>
-        {granted ? <TestnetBadge /> : <ButtonLink href="/onboarding" size="sm">{copy?.action ?? "Grant permission"}</ButtonLink>}
+        {!granted && <ButtonLink href="/onboarding" size="sm">{copy?.action ?? "Grant permission"}</ButtonLink>}
       </div>
     </Card>
   );

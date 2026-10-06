@@ -30,7 +30,7 @@ export default function ActivityPage() {
     <>
       <PageHeader
         title="Activity"
-        description="Every transfer Auctra has sent, skipped or blocked, newest first."
+        description="Every run, newest first."
         actions={
           (executions.data?.length ?? 0) > 0 && (
             <Button variant="secondary" icon={<IconDownload />} onClick={exportCsv} loading={exporting} loadingLabel="Preparing CSV…">
@@ -52,7 +52,7 @@ export default function ActivityPage() {
           loadingLabel="Loading your transfers…"
           errorTitle="Couldn't load your activity"
           onRetry={() => refresh(["executions"])}
-          empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="When an automation runs, the result and its transaction show up here." />}
+          empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="Runs will show up here." />}
         >
           {(items) => <ExecutionList executions={items} timezone={me.data?.user?.timezone} />}
         </Resource>

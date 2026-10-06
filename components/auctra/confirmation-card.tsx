@@ -1,10 +1,10 @@
-import { Address, TestnetBadge } from "@/components/ui";
+import { Address } from "@/components/ui";
 import type { AutomationPreview } from "@/lib/client/api";
 import { actionLabel, formatDay, formatTime, formatUsdc, scheduleParts } from "@/lib/client/format";
 
 /**
  * Auctra's reading of a request, as plain fields: what, when, to whom, under
- * which condition, on which network. Shown before anything is activated.
+ * which condition. Shown before anything is activated.
  */
 export function ConfirmationCard({ preview, accountLabel = "Auctra Wallet" }: { preview: AutomationPreview; accountLabel?: string }) {
   const { cadence, time } = scheduleParts(preview.schedule);
@@ -30,22 +30,11 @@ export function ConfirmationCard({ preview, accountLabel = "Auctra Wallet" }: { 
           <span className="block font-medium">{preview.destination.label}</span>
           <Address value={preview.destination.address} label="Destination address" />
         </Row>
-        <Row label="Condition">
-          {preview.condition ? (
-            <span>Only if your balance is at least {formatUsdc(preview.condition.amount)} USDC</span>
-          ) : (
-            <span className="text-ink-2">None</span>
-          )}
-        </Row>
+        {preview.condition && <Row label="If">Balance is at least {formatUsdc(preview.condition.amount)} USDC</Row>}
         {preview.balanceFloor && Number(preview.balanceFloor) > 0 && (
           <Row label="Floor">Keeps at least {formatUsdc(preview.balanceFloor)} USDC in your wallet</Row>
         )}
         {preview.memo && <Row label="Memo">{preview.memo}</Row>}
-        <Row label="Network">
-          <span className="inline-flex flex-wrap items-center gap-2">
-            Monad Testnet <TestnetBadge compact />
-          </span>
-        </Row>
         <Row label="From">
           <span className="block">{accountLabel}</span>
           <Address value={preview.wallet.address} label="Your wallet address" />
