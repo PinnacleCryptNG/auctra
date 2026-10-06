@@ -1,4 +1,5 @@
 export const MONAD_TESTNET_CHAIN_ID = 10143 as const;
+export const MONAD_TESTNET_CAIP2 = `eip155:${MONAD_TESTNET_CHAIN_ID}` as const;
 
 export function assertMonadTestnet(chainId: number): asserts chainId is typeof MONAD_TESTNET_CHAIN_ID {
   if (chainId !== MONAD_TESTNET_CHAIN_ID) {

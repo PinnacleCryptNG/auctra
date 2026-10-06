@@ -1,0 +1,5 @@
+/* Sandbox stylesheet: the app's own design system plus the sandbox files. */
+@import "../app/globals.css";
+@source "../app";
+@source "../components";
+@source "./sandbox";

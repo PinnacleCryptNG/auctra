@@ -1,0 +1,15 @@
+<title>Auctra Sandbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="sandbox.css">
+<style>
+  /* Boot screen only; the app itself is styled by sandbox.css (Auctra's design tokens). */
+  :root { color-scheme: light; }
+  body { background: #f5f6f4; color: #0b0d0f; }
+  #boot { min-height: 100dvh; display: grid; place-items: center; padding-inline: 16px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  #boot p { max-width: 26rem; text-align: center; color: #3a4146; line-height: 1.5; }
+</style>
+<div id="boot"><p id="boot-status">Starting Auctra in your browser…</p></div>
+<div id="root"></div>
+<script type="module" src="sandbox.js"></script>
