@@ -27,15 +27,19 @@ export const ERC20_TRANSFER_ABI = erc20Abi.filter((item) => item.type === "funct
  * `eth_sendTransaction` itself is only reachable through the ALLOW rule, and
  * the DENY rules below catch the parts of it that can be expressed.
  */
-export const DENIED_METHODS = [
+export const DENIED_METHODS = ["personal_sign", "exportPrivateKey", "exportSeedPhrase"] as const satisfies readonly PolicyMethod[];
+
+/**
+ * Methods Privy refuses a condition-less rule for ("must have at least one
+ * condition"), so they get no explicit DENY. They have no ALLOW rule either,
+ * so they rely on Privy denying unmatched requests; the live spike checks that.
+ */
+export const UNRULED_METHODS = [
   "eth_signTransaction",
   "eth_signUserOperation",
   "eth_signTypedData_v4",
-  "personal_sign",
   "eth_sign7702Authorization",
-  "wallet_sendCalls",
-  "exportPrivateKey",
-  "exportSeedPhrase"
+  "wallet_sendCalls"
 ] as const satisfies readonly PolicyMethod[];
 
 export type TransferPolicyLimits = {
