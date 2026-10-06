@@ -31,7 +31,7 @@ import { permissionCopy } from "@/lib/client/readiness";
 export default function SettingsPage() {
   return (
     <>
-      <PageHeader title="Settings" description="Wallet, recipients and limits." />
+      <PageHeader title="Settings" />
       <div className="grid gap-6">
         <WalletSection />
         <DestinationsSection />
@@ -73,29 +73,23 @@ function WalletSection() {
 
   return (
     <Card aria-labelledby="wallet-heading">
-      <CardHeader id="wallet-heading" title="Auctra Wallet" description="You own it. Auctra never sees its keys." />
+      <CardHeader
+        id="wallet-heading"
+        title="Auctra Wallet"
+        actions={verified ? <Badge tone="success">Active</Badge> : <Badge tone="warning">{copy.badge}</Badge>}
+      />
       <CardBody>
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Automations">
-            {verified ? <Badge tone="success">Can run automations</Badge> : <Badge tone="warning">{copy.badge}</Badge>}
-          </Detail>
-          <Detail label="Address" wide>
-            <Address value={wallet.address} label="Wallet address" full />
-          </Detail>
-        </dl>
+        <Address value={wallet.address} label="Wallet address" full />
 
         <div className="mt-5 grid gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
           <div className="flex items-start gap-3">
             <IconWallet className="mt-0.5 shrink-0 text-lg text-slate" />
             <div className="grid gap-1 text-sm">
-              <p className="font-medium">What Auctra is allowed to do</p>
+              <p className="font-medium">Limits</p>
               <ul className="list-disc space-y-0.5 pl-4 text-ink-2">
-                <li>Send USDC only</li>
-                <li>Send only to your saved destinations</li>
-                <li>
-                  At most {formatUsdc(data.limits.maxTransferUsdc)} USDC per transfer and {formatUsdc(data.limits.dailyCapUsdc)} USDC per 24
-                  hours
-                </li>
+                <li>USDC only, to saved destinations</li>
+                <li>{formatUsdc(data.limits.maxTransferUsdc)} USDC per transfer</li>
+                <li>{formatUsdc(data.limits.dailyCapUsdc)} USDC per day</li>
               </ul>
             </div>
           </div>
@@ -153,7 +147,6 @@ function DestinationsSection() {
       <CardHeader
         id="destinations-heading"
         title="Saved destinations"
-        description="Auctra can only send to wallets on this list."
         actions={
           <Button variant="secondary" size="sm" icon={<IconPlus />} onClick={() => setAdding(true)}>
             Add destination
@@ -268,10 +261,10 @@ function PreferencesSection() {
       <CardBody>
         <form onSubmit={save} noValidate className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Balance floor (USDC)" hint="Never go below this. Leave empty for none." error={floorError}>
+            <Field label="Balance floor (USDC)" hint="Optional." error={floorError}>
               {(p) => <Input {...p} value={floor} onChange={(e) => setFloor(e.target.value)} inputMode="decimal" placeholder="e.g. 300" autoComplete="off" />}
             </Field>
-            <Field label="Timezone" hint="Schedules run at local times in this timezone.">
+            <Field label="Timezone">
               {(p) => (
                 <>
                   <Input {...p} value={timezone} onChange={(e) => setTimezone(e.target.value)} list="timezones" autoComplete="off" spellCheck={false} />
@@ -305,7 +298,7 @@ function AccountSection() {
       <CardHeader id="account-heading" title="Account" />
       <CardBody>
         <dl className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Name">{account.type === "BUSINESS" ? account.businessName : "Personal account"}</Detail>
+          {account.type === "BUSINESS" && <Detail label="Business">{account.businessName}</Detail>}
           <Detail label="Type">{account.type === "BUSINESS" ? "Business" : "Personal"}</Detail>
         </dl>
         <div className="mt-5">

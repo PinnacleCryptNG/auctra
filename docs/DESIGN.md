@@ -4,8 +4,8 @@ How the web app looks and behaves. Product rules live in `docs/PRD.md`; this fil
 
 ## Principles
 
-- **Ledger & Flare.** Warm paper, deep aubergine ink, a chartreuse signal for the primary action and success, and a vermilion flare for emphasis. It should never be mistaken for a blue-and-white fintech or a neon crypto dashboard.
-- **Editorial, not terminal.** A soft serif (Fraunces) carries headlines and amounts; a clean grotesk (Instrument Sans) carries the product. Italic flare phrases mark the one idea a heading is about.
+- **Three colours.** Warm paper, deep aubergine ink and one chartreuse accent, the same restraint as the calmest fintech apps. Amber and red appear only as status colours. Uniqueness comes from type and form (soft serif, highlighter emphasis, hard offset shadows), not from more hues.
+- **Editorial, not terminal.** A soft serif (Fraunces) carries headlines and amounts; a clean grotesk (Instrument Sans) carries the product. An italic phrase with a chartreuse highlighter stroke marks the one idea a heading is about.
 - **Say it, see it, confirm it.** Every money movement is shown as plain fields (amount, when, to, condition, network) before it exists.
 - **State never relies on colour alone.** Every status has an icon and a word.
 - **Mobile is designed, not shrunk.** Bottom navigation, bottom-sheet dialogs, stacked lists instead of tables.
@@ -17,8 +17,6 @@ How the web app looks and behaves. Product rules live in `docs/PRD.md`; this fil
 | `obsidian` | `#1B1433` | Aubergine ink, dark bands, sidebar, focus ring |
 | `signal` | `#C5F04A` | Chartreuse: primary buttons, success fills, marquee band |
 | `signal-strong` | `#B2E02C` | Primary hover |
-| `flare` | `#FF5C35` | Vermilion: emphasis, the logo dot, final CTA band, hard shadows on dark |
-| `flare-text` | `#E4461E` | Flare used as text (the `accent-italic` utility) |
 | `amber` | `#F5B83D` | Pending / warning / testnet fills and borders |
 | `danger` | `#E5484D` | Failed / danger borders |
 | `cloud` | `#F5EFE4` | Paper: page background, subtle panels |
@@ -27,14 +25,13 @@ How the web app looks and behaves. Product rules live in `docs/PRD.md`; this fil
 | `line` | `#E4D9C6` | Borders and dividers |
 | `ink-2` | `#463F57` | Body text one step softer than obsidian |
 | `signal-ink` / `-soft` | `#3E6B00` / `#EEF9CC` | Green **text** and its tint |
-| `flare-ink` / `-soft` | `#B8360F` / `#FFE6DC` | Flare **text** on its tint |
 | `amber-ink` / `-soft` | `#8A5A00` / `#FDF1DA` | Amber **text** and its tint |
 | `danger-ink` / `-soft` | `#B42F2F` / `#FDEAEA` | Red **text** and its tint |
 | `obsidian-2`, `obsidian-line` | `#261E42`, `#3B3259` | Hover and borders on dark bands |
 
-Measured contrast: slate on surface 5.93, slate on cloud 5.30, cloud on obsidian 15.36, obsidian on signal 13.34, obsidian on flare 5.72, flare on obsidian 5.72, signal-ink on signal-soft 5.76, flare-ink on flare-soft 4.93, amber-ink on amber-soft 5.30, danger-ink on danger-soft 5.35, flare-text on cloud 3.53 (headline sizes only). Raw `flare` on paper is 2.68, so it is used only for decoration and large numerals, never body text.
+Measured contrast: slate on surface 5.93, slate on cloud 5.30, cloud on obsidian 15.36, obsidian on signal 13.34, signal-ink on signal-soft 5.76, amber-ink on amber-soft 5.30, danger-ink on danger-soft 5.35.
 
-Geometry: `--radius-control` pill (buttons), `--radius-input` 12px, `--radius-card` 18px, `--radius-surface` 24px (dialogs, sheets, feature cards). `--shadow-pop` is a hard 4px aubergine offset shadow used on marketing cards. Utilities: `accent-italic` (italic flare phrase), `bg-ledger` (faint ruled-paper lines), `bg-grain` (dot grain on dark bands). Spacing uses Tailwind's 4px scale.
+Geometry: `--radius-control` pill (buttons), `--radius-input` 12px, `--radius-card` 18px, `--radius-surface` 24px (dialogs, sheets, feature cards). `--shadow-pop` is a hard 4px aubergine offset shadow used on marketing cards. Utilities: `accent-italic` (italic phrase with a chartreuse highlighter stroke), `bg-ledger` (faint ruled-paper lines), `bg-grain` (dot grain on dark bands). Spacing uses Tailwind's 4px scale.
 
 ## Typography
 
@@ -56,7 +53,7 @@ Fluid sizes use `clamp()` so phones don't get oversized headings.
 
 ## Brand assets
 
-- Mark: a chartreuse "A" on an aubergine tile whose crossbar is a vermilion dot, the moment an automation fires. `components/auctra/logo.tsx`, `app/icon.svg` (favicon), `app/apple-icon.png` (180px touch icon), `public/brand/auctra-mark.svg` and `auctra-mark-512.png`.
+- Mark: a chartreuse "A" on an aubergine tile whose crossbar is a paper-coloured dot, the moment an automation fires. `components/auctra/logo.tsx`, `app/icon.svg` (favicon), `app/apple-icon.png` (180px touch icon), `public/brand/auctra-mark.svg` and `auctra-mark-512.png`.
 - Lockups: `public/brand/auctra-lockup-dark.svg|png` (on aubergine) and `auctra-lockup-light.svg|png` (on paper).
 - Social card: `app/opengraph-image.tsx` (1200×630).
 - Marketing chrome: `SiteHeader` and `SiteFooter` in `components/auctra/site-chrome.tsx`, used by the landing, legal and 404 pages.

@@ -60,7 +60,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                       active ? "bg-cloud font-semibold text-obsidian" : "text-cloud/70 hover:bg-obsidian-2 hover:text-cloud"
                     }`}
                   >
-                    <Icon className={`text-lg ${active ? "text-flare" : "text-cloud/50"}`} />
+                    <Icon className={`text-lg ${active ? "text-obsidian" : "text-cloud/50"}`} />
                     {label}
                   </Link>
                 </li>
@@ -114,7 +114,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                   >
                     <Icon className="text-[1.375rem]" />
                     {label}
-                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-flare" : "bg-transparent"}`} />
+                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-signal" : "bg-transparent"}`} />
                   </Link>
                 </li>
               );

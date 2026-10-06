@@ -3,7 +3,8 @@
 /*
  * Auctra design tokens. See docs/DESIGN.md.
  * "Ledger & Flare": warm paper, deep aubergine ink, a chartreuse signal for
- * the primary action and success, and a vermilion flare for emphasis.
+ * the one accent: primary action, success and emphasis. Three colours,
+ * like the calmest fintech apps; status colours are used only for status.
  * Token names are kept stable; the "-ink" shades are the text-safe versions
  * of each hue (WCAG AA on paper and on their "-soft" tints).
  */
@@ -11,7 +12,6 @@
   /* Core palette */
   --color-obsidian: #1b1433;
   --color-signal: #c5f04a;
-  --color-flare: #ff5c35;
   --color-amber: #f5b83d;
   --color-danger: #e5484d;
   --color-cloud: #f5efe4;
@@ -25,9 +25,6 @@
   --color-signal-ink: #3e6b00;
   --color-signal-soft: #eef9cc;
   --color-signal-strong: #b2e02c;
-  --color-flare-ink: #b8360f;
-  --color-flare-text: #e4461e;
-  --color-flare-soft: #ffe6dc;
   --color-amber-ink: #8a5a00;
   --color-amber-soft: #fdf1da;
   --color-danger-ink: #b42f2f;
@@ -178,11 +175,15 @@
   }
 }
 
-/* Emphasis inside serif headings: italic flare. */
+/* Emphasis inside serif headings: italic with a chartreuse highlighter
+   stroke under the lower half, readable on paper and on aubergine. */
 @utility accent-italic {
   font-style: italic;
   font-variation-settings: "SOFT" 100, "WONK" 1;
-  color: var(--color-flare-text);
+  background-image: linear-gradient(to top, color-mix(in oklab, var(--color-signal) 70%, transparent) 0 34%, transparent 34%);
+  padding-inline: 0.06em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* Faint ledger rules, used behind marketing sections. */
