@@ -1,6 +1,9 @@
 import type { SVGProps } from "react";
 
-// Small stroke icon set (24px grid, 1.75 stroke). Decorative by default.
+// Auctra's own icon set: 24px grid, 1.75 stroke, rounded ends, and one solid
+// dot per glyph that echoes the dot in the logo's "A". The dot takes
+// --icon-dot when set (e.g. chartreuse on dark), otherwise the text colour.
+// Decorative by default.
 type IconProps = SVGProps<SVGSVGElement> & { title?: string };
 
 function Icon({ title, children, ...props }: IconProps & { children: React.ReactNode }) {
@@ -25,26 +28,49 @@ function Icon({ title, children, ...props }: IconProps & { children: React.React
   );
 }
 
-export const IconCheck = (p: IconProps) => <Icon {...p}><path d="M5 12.5l4.5 4.5L19 7.5" /></Icon>;
-export const IconClock = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></Icon>;
-export const IconPause = (p: IconProps) => <Icon {...p}><path d="M9 6.5v11M15 6.5v11" /></Icon>;
-export const IconPlay = (p: IconProps) => <Icon {...p}><path d="M8 6.5v11l9-5.5z" /></Icon>;
-export const IconX = (p: IconProps) => <Icon {...p}><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></Icon>;
-export const IconAlert = (p: IconProps) => <Icon {...p}><path d="M12 3.5l9.5 16.5h-19z" /><path d="M12 10v4.5M12 17.25v.25" /></Icon>;
-export const IconSkip = (p: IconProps) => <Icon {...p}><path d="M5 7l6 5-6 5zM13 7l6 5-6 5z" /></Icon>;
+/** The signature dot. */
+const Dot = ({ cx, cy, r = 1.6 }: { cx: number; cy: number; r?: number }) => (
+  <circle cx={cx} cy={cy} r={r} fill="var(--icon-dot, currentColor)" stroke="none" />
+);
+
+// Status
+export const IconCheck = (p: IconProps) => <Icon {...p}><path d="M5 12.5l4.25 4.25L19 7" /></Icon>;
+export const IconX = (p: IconProps) => <Icon {...p}><path d="M7 7l10 10M17 7L7 17" /></Icon>;
+export const IconClock = (p: IconProps) => <Icon {...p}><path d="M20 12a8 8 0 1 1-8-8" /><path d="M12 8v4l2.75 2.75" /><Dot cx={18.25} cy={5.75} /></Icon>;
+export const IconAlert = (p: IconProps) => <Icon {...p}><path d="M10.3 4.6a2 2 0 0 1 3.4 0l7 12A2 2 0 0 1 19 19.5H5a2 2 0 0 1-1.7-2.9z" /><path d="M12 9.5v3.5" /><Dot cx={12} cy={16.25} r={1.25} /></Icon>;
+/** Skipped: the run hops over this slot. */
+export const IconSkip = (p: IconProps) => <Icon {...p}><path d="M4 15.5c1.8-6.2 14.2-6.2 16 0" /><path d="M16.5 15.75l3.5-.25.25-3.5" /><Dot cx={12} cy={17.5} /></Icon>;
 export const IconDot = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" /></Icon>;
-export const IconCopy = (p: IconProps) => <Icon {...p}><rect x="8.5" y="8.5" width="11" height="11" rx="2" /><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5" /></Icon>;
-export const IconExternal = (p: IconProps) => <Icon {...p}><path d="M13.5 4.5h6v6M19.5 4.5L11 13M18 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1H10" /></Icon>;
-export const IconPlus = (p: IconProps) => <Icon {...p}><path d="M12 5v14M5 12h14" /></Icon>;
-export const IconHome = (p: IconProps) => <Icon {...p}><path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" /></Icon>;
-export const IconRepeat = (p: IconProps) => <Icon {...p}><path d="M4.5 11V9.5a3 3 0 0 1 3-3h11l-3-3M19.5 13v1.5a3 3 0 0 1-3 3h-11l3 3" /></Icon>;
-export const IconActivity = (p: IconProps) => <Icon {...p}><path d="M3.5 12h4l2.5-6.5 4 13 2.5-6.5h4" /></Icon>;
-export const IconSettings = (p: IconProps) => <Icon {...p}><circle cx="12" cy="12" r="3" /><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M6 18l1.4-1.4M16.6 7.4L18 6" /></Icon>;
-export const IconWallet = (p: IconProps) => <Icon {...p}><rect x="3.5" y="6" width="17" height="13" rx="2" /><path d="M3.5 9.5h17M16 14h1.5" /></Icon>;
-export const IconShield = (p: IconProps) => <Icon {...p}><path d="M12 3.5l7.5 3v5.5c0 4.2-3.1 7.6-7.5 8.5-4.4-.9-7.5-4.3-7.5-8.5V6.5z" /><path d="M9 12l2 2 4-4" /></Icon>;
-export const IconArrowRight = (p: IconProps) => <Icon {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Icon>;
-export const IconArrowLeft = (p: IconProps) => <Icon {...p}><path d="M19 12H5M11 6l-6 6 6 6" /></Icon>;
-export const IconSend = (p: IconProps) => <Icon {...p}><path d="M4 12l16-7.5-6 16-2.5-6.5z" /><path d="M11.5 14L20 4.5" /></Icon>;
-export const IconDownload = (p: IconProps) => <Icon {...p}><path d="M12 4.5v10M7.5 10.5L12 15l4.5-4.5M5 19.5h14" /></Icon>;
-export const IconLogout = (p: IconProps) => <Icon {...p}><path d="M14.5 4.5H18a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-3.5M10 16l-4-4 4-4M6 12h9" /></Icon>;
-export const IconTrash = (p: IconProps) => <Icon {...p}><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" /></Icon>;
+export const IconPause = (p: IconProps) => <Icon {...p}><rect x="7" y="6" width="3.25" height="12" rx="1.6" /><rect x="13.75" y="6" width="3.25" height="12" rx="1.6" /></Icon>;
+export const IconPlay = (p: IconProps) => <Icon {...p}><path d="M8 7.2v9.6a1.2 1.2 0 0 0 1.8 1l7.7-4.8a1.2 1.2 0 0 0 0-2L9.8 6.2A1.2 1.2 0 0 0 8 7.2z" /></Icon>;
+
+// Actions
+export const IconPlus = (p: IconProps) => <Icon {...p}><path d="M12 5.5v13M5.5 12h13" /></Icon>;
+/** Money leaves the dot. */
+export const IconArrowRight = (p: IconProps) => <Icon {...p}><path d="M8 12h11M14.5 7.5L19 12l-4.5 4.5" /><Dot cx={4.75} cy={12} /></Icon>;
+export const IconArrowLeft = (p: IconProps) => <Icon {...p}><path d="M16 12H5M9.5 7.5L5 12l4.5 4.5" /><Dot cx={19.25} cy={12} /></Icon>;
+export const IconSend = (p: IconProps) => <Icon {...p}><path d="M8 16L18.5 5.5M10.5 5.5h8v8" /><Dot cx={5.5} cy={18.5} r={1.75} /></Icon>;
+export const IconExternal = (p: IconProps) => <Icon {...p}><path d="M11 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" /><path d="M12.5 11.5L19 5M14.5 5H19v4.5" /></Icon>;
+export const IconCopy = (p: IconProps) => <Icon {...p}><rect x="8.5" y="8.5" width="11" height="11" rx="2.5" /><path d="M15.5 5.5a1.5 1.5 0 0 0-1.5-1h-7.5a2 2 0 0 0-2 2V14a1.5 1.5 0 0 0 1 1.5" /><Dot cx={14} cy={14} r={1.4} /></Icon>;
+export const IconDownload = (p: IconProps) => <Icon {...p}><path d="M12 4.5v9.5M8 10l4 4 4-4" /><path d="M5 17.5v.5A1.5 1.5 0 0 0 6.5 19.5h11A1.5 1.5 0 0 0 19 18v-.5" /></Icon>;
+/** A doorway; the dot steps out. */
+export const IconLogout = (p: IconProps) => <Icon {...p}><path d="M13 4.5H7.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2H13" /><path d="M12.5 12H20M16.75 8.5L20.25 12l-3.5 3.5" /><Dot cx={9.25} cy={12} /></Icon>;
+export const IconTrash = (p: IconProps) => <Icon {...p}><path d="M4.5 7h15M9.5 7V5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7M6.5 7l.8 11.1a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7" /></Icon>;
+
+// Places
+/** An arched doorway with the dot inside: home base. */
+export const IconHome = (p: IconProps) => <Icon {...p}><path d="M5.5 19.5V11a6.5 6.5 0 0 1 13 0v8.5M3.5 19.5h17" /><Dot cx={12} cy={13} r={1.75} /></Icon>;
+/** A loop around the dot: it runs again. */
+export const IconRepeat = (p: IconProps) => <Icon {...p}><path d="M19 12a7 7 0 1 1-2.05-4.95" /><path d="M17.25 3.75v3.5h-3.5" /><Dot cx={12} cy={12} r={1.9} /></Icon>;
+/** A torn receipt: every run leaves one. */
+export const IconActivity = (p: IconProps) => <Icon {...p}><path d="M6 4.5h12v15l-2-1.25-2 1.25-2-1.25-2 1.25-2-1.25-2 1.25z" /><path d="M9 8.5h6M9 12h4" /><Dot cx={14.75} cy={15.25} r={1.3} /></Icon>;
+/** Two sliders: your limits and settings. */
+export const IconSettings = (p: IconProps) => <Icon {...p}><path d="M4 8h9.5M18.5 8H20M4 16h1.5M10.5 16H20" /><circle cx="16" cy="8" r="2.5" /><circle cx="8" cy="16" r="2.5" fill="var(--icon-dot, currentColor)" /></Icon>;
+export const IconWallet = (p: IconProps) => <Icon {...p}><path d="M17 8V6a1.5 1.5 0 0 0-1.5-1.5H6.5A2.5 2.5 0 0 0 4 7v10a2.5 2.5 0 0 0 2.5 2.5h12A1.5 1.5 0 0 0 20 18v-8.5A1.5 1.5 0 0 0 18.5 8H6.5A2.5 2.5 0 0 1 4 5.5" /><Dot cx={16} cy={14} r={1.6} /></Icon>;
+/** A shield with a keyhole: custody stays with you. */
+export const IconShield = (p: IconProps) => <Icon {...p}><path d="M12 3.5l7 2.75V12c0 4.1-2.9 7.2-7 8.5-4.1-1.3-7-4.4-7-8.5V6.25z" /><path d="M12 12.5v3" /><Dot cx={12} cy={10.75} r={1.9} /></Icon>;
+export const IconKey = (p: IconProps) => <Icon {...p}><circle cx="8.5" cy="12" r="4.5" /><path d="M13 12h7.5M17.5 12v3M20.5 12v2" /><Dot cx={8.5} cy={12} r={1.5} /></Icon>;
+/** A saved contact card. */
+export const IconContacts = (p: IconProps) => <Icon {...p}><rect x="4" y="5" width="16" height="14" rx="2.5" /><path d="M13.5 10h3.5M13.5 13.5h3.5M7 15.5c.5-1.6 1.6-2.4 2.75-2.4s2.25.8 2.75 2.4" /><Dot cx={9.75} cy={10} r={1.6} /></Icon>;
+/** A dial held below its limit. */
+export const IconGauge = (p: IconProps) => <Icon {...p}><path d="M4.5 17a7.5 7.5 0 1 1 15 0" /><path d="M12 17l-3.5-4.5" /><Dot cx={12} cy={17} r={1.75} /></Icon>;

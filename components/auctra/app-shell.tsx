@@ -62,7 +62,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                       active ? "bg-cloud font-semibold text-obsidian" : "text-cloud/70 hover:bg-obsidian-2 hover:text-cloud"
                     }`}
                   >
-                    <Icon className={`text-lg ${active ? "text-obsidian" : "text-cloud/50"}`} />
+                    <Icon className={`text-lg ${active ? "text-obsidian" : "text-cloud/50 [--icon-dot:var(--color-cloud)]"}`} />
                     {label}
                   </Link>
                 </li>
@@ -115,9 +115,9 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                     aria-current={active ? "page" : undefined}
                     className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium ${active ? "text-cloud" : "text-cloud/55"}`}
                   >
-                    <Icon className="text-[1.375rem]" />
+                    {/* The active tab's dot lights up in chartreuse. */}
+                    <Icon className={`text-[1.375rem] ${active ? "[--icon-dot:var(--color-signal)]" : ""}`} />
                     {label}
-                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-signal" : "bg-transparent"}`} />
                   </Link>
                 </li>
               );

@@ -27,6 +27,7 @@ import { friendlyError, useApi, type Destination } from "@/lib/client/api";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { categoryLabel, formatUsdc } from "@/lib/client/format";
 import { permissionCopy } from "@/lib/client/readiness";
+import { useSignOut } from "@/lib/client/use-sign-out";
 
 export default function SettingsPage() {
   return (
@@ -291,7 +292,7 @@ function PreferencesSection() {
 
 function AccountSection() {
   const { me } = useAuctra();
-  const { logout } = usePrivy();
+  const logout = useSignOut();
   const account = me.data!.account!;
   return (
     <Card aria-labelledby="account-heading">
