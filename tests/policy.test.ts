@@ -73,6 +73,10 @@ describe("transfer policy rules (unit)", () => {
     expect(DENIED_METHODS).not.toContain("eth_sendTransaction");
   });
 
+  it("keeps every rule name under Privy's 50-character limit", () => {
+    for (const rule of rules) expect(rule.name.length).toBeLessThan(50);
+  });
+
   it("refuses an empty allowlist, the USDC contract as a recipient, and a non-positive cap", () => {
     expect(() => buildTransferPolicyRules({ recipients: [], maxUnits: CAP })).toThrow();
     expect(() => buildTransferPolicyRules({ recipients: [MONAD_TESTNET_USDC_ADDRESS], maxUnits: CAP })).toThrow();

@@ -66,7 +66,7 @@ export function buildTransferPolicyRules({ recipients, maxUnits }: TransferPolic
   const cap = maxUnits.toString();
 
   const allow: Rule = {
-    name: "Allow capped Monad Testnet USDC transfers to saved recipients",
+    name: "Allow capped USDC transfers to saved recipients",
     method: "eth_sendTransaction",
     action: "ALLOW",
     conditions: [
