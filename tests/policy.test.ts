@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MONAD_TESTNET_USDC_ADDRESS, encodeUsdcTransfer } from "../lib/usdc";
 import {
   DENIED_METHODS,
+  UNRULED_METHODS,
   assertUsdcTransferCall,
   buildTransferPolicyRules,
   buildUserOwnedTransferPolicy,
@@ -67,10 +68,18 @@ describe("transfer policy rules (unit)", () => {
     const deny = rules.filter((r) => r.action === "DENY");
     expect(deny.some((r) => r.method === "eth_sendTransaction" && r.conditions.some((c) => c.field === "value" && c.operator === "gt"))).toBe(true);
     expect(deny.some((r) => r.method === "eth_sendTransaction" && r.conditions.some((c) => c.field === "transfer.amount" && c.operator === "gt"))).toBe(true);
-    for (const method of ["exportPrivateKey", "exportSeedPhrase", "eth_signTransaction", "personal_sign", "eth_signTypedData_v4", "wallet_sendCalls", "eth_sign7702Authorization", "eth_signUserOperation"]) {
+    for (const method of ["exportPrivateKey", "exportSeedPhrase", "personal_sign"]) {
       expect(deny.some((r) => r.method === method && r.conditions.length === 0)).toBe(true);
     }
     expect(DENIED_METHODS).not.toContain("eth_sendTransaction");
+  });
+
+  it("gives Privy no condition-less rule for methods it requires conditions on, and never allows them", () => {
+    // Privy rejects the whole policy ("must have at least one condition") otherwise.
+    for (const method of ["eth_signTransaction", "eth_signUserOperation", "eth_signTypedData_v4", "eth_sign7702Authorization", "wallet_sendCalls"]) {
+      expect(UNRULED_METHODS).toContain(method);
+      expect(rules.some((r) => r.method === method)).toBe(false);
+    }
   });
 
   it("keeps every rule name under Privy's 50-character limit", () => {
