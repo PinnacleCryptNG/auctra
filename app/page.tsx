@@ -176,6 +176,14 @@ export default function Home() {
       <footer className="mx-auto flex max-w-[76rem] flex-col gap-3 px-4 py-8 text-sm text-slate sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
         <Logo />
         <p>Testnet software. Auctra moves test USDC on Monad Testnet only. Not financial advice.</p>
+        <nav aria-label="Legal" className="flex gap-4">
+          <a href="/privacy" className="hover:text-ink">
+            Privacy
+          </a>
+          <a href="/terms" className="hover:text-ink">
+            Terms
+          </a>
+        </nav>
       </footer>
     </div>
   );
