@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "if [ -n \"$DATABASE_URL\" ]; then drizzle-kit migrate; else echo \"DATABASE_URL not set: skipping migrations\"; fi && next build",
     "start": "next start",
     "lint": "next typegen && tsc --noEmit",
     "test": "vitest run",
