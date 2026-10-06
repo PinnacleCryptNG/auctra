@@ -5,6 +5,7 @@ import { getDb, type Db } from "../../db/client";
 import { createClaudeIntentModel } from "../ai/intent-parser";
 import { getMonadPublicClient } from "../chain/monad";
 import type { ExecutionDeps } from "../services/executions";
+import { canonicalJson, sha256 } from "../services/hash";
 import { createTelegramNotifier } from "../services/notifications";
 import { createTelegramClient } from "../telegram/api";
 import type { BotDeps } from "../telegram/bot";
@@ -91,12 +92,15 @@ export function getExecutionDeps(db: Db = getDb()): ExecutionDeps {
  */
 export async function createUserOwnedTransferPolicy(input: { privyUserId: string; privyWalletId: string; limits: TransferPolicyLimits }) {
   const fingerprint = expectedPolicyFingerprint(input.limits);
+  const params = buildUserOwnedTransferPolicy({ name: `auctra-${fingerprint.slice(0, 16)}`, privyUserId: input.privyUserId, ...input.limits });
   const policy = await getPrivyClient()
     .policies()
     .create({
-      ...buildUserOwnedTransferPolicy({ name: `auctra-${fingerprint.slice(0, 16)}`, privyUserId: input.privyUserId, ...input.limits }),
-      // Same wallet + same limits within Privy's 24h idempotency window -> same policy, not a new one per page view.
-      idempotency_key: `auctra-policy:${input.privyWalletId}:${fingerprint}`
+      ...params,
+      // Same wallet + same request within Privy's 24h idempotency window -> same policy, not a new one per page view.
+      // Keyed on the whole request, not just the limits, so a changed request (e.g. a renamed rule) isn't
+      // answered with a cached response, including a cached error, for the old one.
+      idempotency_key: `auctra-policy:${input.privyWalletId}:${sha256(canonicalJson(params))}`
     });
   return { policyId: policy.id, fingerprint };
 }
