@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { parseIntent, toFinancialIntent, type Extraction, type IntentModel } from "../lib/ai/intent-parser";
+import { createClaudeIntentModel, parseIntent, toFinancialIntent, type Extraction, type IntentModel } from "../lib/ai/intent-parser";
+import { UserFacingError } from "../lib/services/errors";
 
 const base: Extraction = {
   outcome: "TRANSFER_REQUEST",
@@ -106,5 +107,59 @@ describe("parseIntent", () => {
     const bad = (async () => ({ ...base, frequency: "HOURLY" })) as unknown as IntentModel;
     expect(await parseIntent(bad, { message: "x", timezone: "UTC" })).toMatchObject({ kind: "clarify" });
     expect(await parseIntent(async () => "refused", { message: "x", timezone: "UTC" })).toMatchObject({ kind: "unsupported" });
+  });
+});
+
+describe("createClaudeIntentModel", () => {
+  const input = { message: "Send $10 usdc to my rent every Friday", today: "2026-10-06", timezone: "UTC" };
+  const json = (status: number, body: unknown) =>
+    new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  const reply = (extraction: Extraction) =>
+    json(200, {
+      id: "msg_1",
+      type: "message",
+      role: "assistant",
+      model: "claude-opus-5-5",
+      content: [{ type: "text", text: JSON.stringify(extraction) }],
+      stop_reason: "end_turn",
+      stop_sequence: null,
+      usage: { input_tokens: 1, output_tokens: 1 }
+    });
+
+  it("answers with a friendly error when the API key is missing", async () => {
+    const saved = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const model = createClaudeIntentModel();
+      await expect(model(input)).rejects.toMatchObject({ code: "AI_UNAVAILABLE" });
+    } finally {
+      if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved;
+    }
+  });
+
+  it("retries once without server-side fallbacks when the API rejects them", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const extraction = { ...base, amount: "10", destinationLabel: "rent", time: null };
+    const bodies: Record<string, unknown>[] = [];
+    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return bodies.length === 1
+        ? json(400, { type: "error", error: { type: "invalid_request_error", message: "fallbacks not enabled" } })
+        : reply(extraction);
+    });
+    const model = createClaudeIntentModel({ apiKey: "test", fetch: fetchMock as unknown as typeof fetch });
+    expect(await model(input)).toEqual(extraction);
+    expect(bodies[0]).toHaveProperty("fallbacks", "default");
+    expect(bodies[1]).not.toHaveProperty("fallbacks");
+  });
+
+  it("turns API failures into a user-facing error instead of a crash", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi.fn(async () => json(401, { type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } }));
+    const model = createClaudeIntentModel({ apiKey: "bad", fetch: fetchMock as unknown as typeof fetch });
+    const error = await model(input).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(UserFacingError);
+    expect(error).toMatchObject({ code: "AI_UNAVAILABLE" });
   });
 });

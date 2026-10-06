@@ -3,6 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { DAYS_OF_WEEK, usdcAmountString } from "../automation-types";
 import { financialIntentSchema, type FinancialIntent } from "../financial-intent";
+import { UserFacingError } from "../services/errors";
 
 // PRD §8: Claude only extracts what the user said. It never authorizes, never
 // resolves addresses, and never executes. Fields the user didn't state stay
@@ -54,31 +55,65 @@ Rules:
 
 export type IntentModel = (input: { message: string; today: string; timezone: string }) => Promise<Extraction | "refused">;
 
-export function createClaudeIntentModel(options: { apiKey?: string; model?: string } = {}): IntentModel {
-  const client = new Anthropic(options.apiKey ? { apiKey: options.apiKey } : {});
+export const AI_UNAVAILABLE_MESSAGE = "Auctra couldn't read that just now. Nothing was changed. Try again in a moment.";
+
+export function createClaudeIntentModel(options: { apiKey?: string; model?: string; fetch?: typeof fetch } = {}): IntentModel {
+  const apiKey = options.apiKey ?? process.env.ANTHROPIC_API_KEY;
   const model = options.model ?? process.env.ANTHROPIC_MODEL ?? DEFAULT_INTENT_MODEL;
+  // Created on first use: a missing key must not crash the route before we can answer kindly.
+  let client: Anthropic | null = null;
 
   return async ({ message, today, timezone }) => {
-    const response = await client.beta.messages.parse({
+    if (!apiKey) {
+      console.error("Intent model unavailable: ANTHROPIC_API_KEY is not set.");
+      throw new UserFacingError("AI_UNAVAILABLE", AI_UNAVAILABLE_MESSAGE);
+    }
+    client ??= new Anthropic({ apiKey, ...(options.fetch ? { fetch: options.fetch, maxRetries: 0 } : {}) });
+    const request = {
       model,
       max_tokens: 2048,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "low", format: betaZodOutputFormat(extractionSchema) },
+      output_config: { effort: "low" as const, format: betaZodOutputFormat(extractionSchema) },
       // Stable system prompt first for caching; per-request data goes in the user turn.
       system: SYSTEM_PROMPT,
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content: `Current date: ${today} (timezone ${timezone}).\n\nMessage:\n<message>\n${message}\n</message>`
         }
       ]
-    });
+    };
+
+    let response;
+    try {
+      try {
+        response = await client.beta.messages.parse({ ...request, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
+      } catch (error) {
+        // If the account can't use server-side fallbacks, ask once more without them.
+        if (!(error instanceof Anthropic.BadRequestError)) throw error;
+        logModelError("retrying without fallbacks", error);
+        response = await client.beta.messages.parse(request);
+      }
+    } catch (error) {
+      logModelError("failed", error);
+      throw new UserFacingError("AI_UNAVAILABLE", AI_UNAVAILABLE_MESSAGE);
+    }
 
     if (response.stop_reason === "refusal") return "refused";
-    if (!response.parsed_output) throw new Error(`Intent extraction returned no parsed output (stop_reason=${response.stop_reason}).`);
+    if (!response.parsed_output) {
+      console.error(`Intent model returned no parsed output (stop_reason=${response.stop_reason}).`);
+      throw new UserFacingError("AI_UNAVAILABLE", AI_UNAVAILABLE_MESSAGE);
+    }
     return response.parsed_output;
   };
+}
+
+// Status, type and message only: enough to fix configuration from the Vercel log, never the user's text.
+function logModelError(stage: string, error: unknown) {
+  if (error instanceof Anthropic.APIError) {
+    console.error(`Intent model ${stage}: ${error.status ?? "no status"} ${error.name}: ${error.message}`);
+  } else {
+    console.error(`Intent model ${stage}:`, error instanceof Error ? `${error.name}: ${error.message}` : error);
+  }
 }
 
 const WEEKDAY_WORDS = DAYS_OF_WEEK.map((d) => d[0] + d.slice(1).toLowerCase());

@@ -73,6 +73,7 @@ export function friendlyError(error: unknown, fallbackTitle = "That didn't work"
     if (error.status === 0) return { title: "Couldn't reach Auctra", description: "Check your connection and try again." };
     if (error.status === 401) return { title: "Your session ended", description: "Sign in again to continue." };
     if (error.code === "NOT_CONFIGURED") return { title: "Sign-in isn't available right now", description: "This server isn't fully set up yet. Try again later." };
+    if (error.code === "AI_UNAVAILABLE") return { title: fallbackTitle, description: error.message };
     if (error.status >= 500) return { title: "Something went wrong on our side", description: "Nothing was changed. Try again in a moment." };
     return { title: fallbackTitle, description: error.message };
   }

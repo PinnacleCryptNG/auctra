@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui";
+import { ChainChip } from "./chain-chip";
 import { Logo } from "./logo";
 
 const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
@@ -17,7 +18,10 @@ export function SiteHeader({ tone = "light" }: { tone?: "dark" | "light" }) {
   const dark = tone === "dark";
   return (
     <header className="mx-auto flex w-full max-w-[78rem] items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-10">
-      <Logo tone={dark ? "light" : "dark"} />
+      <div className="flex min-w-0 items-center gap-3">
+        <Logo tone={dark ? "light" : "dark"} />
+        <ChainChip tone={tone} className="hidden min-[420px]:inline-flex" />
+      </div>
       <nav aria-label="Primary" className="flex items-center gap-1">
         {NAV.map((item) => (
           <Link
