@@ -364,15 +364,7 @@ Telegram is the primary product surface. The dashboard exists to host onboarding
 | Brand | Auctra |
 | Category | Autonomous Financial Agent |
 | Tagline | Tell Auctra what you want your money to do. It handles the rest. |
-| Typography | Inter; JetBrains Mono for hashes/data |
-| Obsidian | `#0B0D0F` |
-| Signal Green | `#35D07F` |
-| Amber | `#F2B84B` |
-| Red | `#EF5B5B` |
-| Cloud | `#F5F6F4` |
-| Slate | `#667078` |
-| Border | `#DCE1DE` |
-| Geometry | 8px buttons · 12px cards · 16px large surfaces |
+| Visual system | See `docs/DESIGN.md` (paper, aubergine and chartreuse; Fraunces, Instrument Sans, JetBrains Mono) |
 
 Visual direction: institutional, technical, precise and trustworthy. Avoid neon crypto aesthetics, trading-terminal clutter, cartoon AI imagery and generic SaaS gradients.
 
