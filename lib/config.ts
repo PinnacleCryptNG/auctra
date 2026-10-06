@@ -1,5 +1,13 @@
 import { MONAD_TESTNET_CHAIN_ID } from "./network";
 
+/** Required server configuration is missing. Carries variable NAMES only, never values. */
+export class ConfigurationError extends Error {
+  constructor(public readonly missing: string[]) {
+    super(`Missing or invalid environment variables: ${missing.join(", ")}`);
+    this.name = "ConfigurationError";
+  }
+}
+
 export const AuctraConfig = {
   chainId: MONAD_TESTNET_CHAIN_ID,
   network: "testnet",

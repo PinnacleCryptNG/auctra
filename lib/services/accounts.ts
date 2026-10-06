@@ -1,9 +1,8 @@
 import { and, eq, gt, isNull, or } from "drizzle-orm";
-import { getAddress, isAddress } from "viem";
 import type { Db } from "../../db/client";
 import { accounts, linkTokens, users, wallets } from "../../db/schema";
-import { MONAD_TESTNET_CHAIN_ID } from "../network";
 import { isValidTimezone } from "../schedule";
+import { validateWalletMetadata } from "../wallet/metadata";
 import { recordAudit } from "./audit";
 import { UserFacingError } from "./errors";
 import { randomToken, sha256 } from "./hash";
@@ -65,7 +64,7 @@ export async function consumeLinkToken(db: Db, token: string, privyUserId: strin
 
   const [alreadyLinked] = await db.select().from(users).where(eq(users.privyUserId, privyUserId));
   if (alreadyLinked && alreadyLinked.id !== link.userId) {
-    throw new UserFacingError("LINK_CONFLICT", "This login is already linked to a different Telegram account.");
+    return attachTelegramToPrivyUser(db, { privyUser: alreadyLinked, telegramUserId: link.userId });
   }
 
   const [user] = await db
@@ -77,6 +76,48 @@ export async function consumeLinkToken(db: Db, token: string, privyUserId: strin
 
   await recordAudit(db, { userId: user.id, eventType: "USER_LINKED", metadata: { privyUserId } });
   return user;
+}
+
+/**
+ * Someone who signed in on the web first and later sent /start in Telegram:
+ * move the Telegram identity onto their existing Auctra user. Only allowed
+ * when that user has no Telegram link yet and the Telegram-only record has
+ * no account of its own; anything else is a genuine conflict.
+ */
+async function attachTelegramToPrivyUser(db: Db, input: { privyUser: User; telegramUserId: string }): Promise<User> {
+  const [telegramUser] = await db.select().from(users).where(eq(users.id, input.telegramUserId));
+  const [telegramAccount] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.ownerUserId, input.telegramUserId));
+  if (!telegramUser?.telegramId || input.privyUser.telegramId || telegramAccount) {
+    throw new UserFacingError("LINK_CONFLICT", "This login is already linked to a different Telegram account.");
+  }
+  // telegram_id is unique: release it from the Telegram-only record first.
+  await db.update(users).set({ telegramId: null, telegramChatId: null }).where(eq(users.id, telegramUser.id));
+  const [user] = await db
+    .update(users)
+    .set({ telegramId: telegramUser.telegramId, telegramChatId: telegramUser.telegramChatId })
+    .where(and(eq(users.id, input.privyUser.id), isNull(users.telegramId)))
+    .returning();
+  if (!user) throw new UserFacingError("LINK_CONFLICT", "This login is already linked to a different Telegram account.");
+  await recordAudit(db, { userId: user.id, eventType: "USER_LINKED", metadata: { privyUserId: user.privyUserId, mergedFromUserId: telegramUser.id } });
+  return user;
+}
+
+/**
+ * The Auctra user for a verified Privy login (PRD §6 step 2). Created on
+ * first sign-in; idempotent. Stores the Privy user ID only, no credentials.
+ */
+export async function getOrCreatePrivyUser(db: Db, privyUserId: string): Promise<User> {
+  if (!/^[\w:.-]{1,128}$/.test(privyUserId)) throw new UserFacingError("INVALID_USER", "This sign-in couldn't be verified.");
+  const [existing] = await db.select().from(users).where(eq(users.privyUserId, privyUserId));
+  if (existing) return existing;
+
+  const [created] = await db.insert(users).values({ privyUserId }).onConflictDoNothing({ target: users.privyUserId }).returning();
+  if (created) {
+    await recordAudit(db, { userId: created.id, eventType: "USER_CREATED", metadata: { via: "privy" } });
+    return created;
+  }
+  const [raced] = await db.select().from(users).where(eq(users.privyUserId, privyUserId));
+  return raced;
 }
 
 export async function getAccountContext(db: Db, where: { userId: string } | { privyUserId: string } | { telegramId: string }): Promise<AccountContext | null> {
@@ -149,13 +190,14 @@ export async function updateSettings(
 
 export async function registerWallet(
   db: Db,
-  input: { accountId: string; userId: string; privyWalletId: string; address: string }
+  input: { accountId: string; userId: string; privyWalletId: string; address: string; chainId: number }
 ): Promise<Wallet> {
-  if (!isAddress(input.address)) throw new UserFacingError("INVALID_WALLET", "Wallet address is invalid.");
+  // Monad Testnet only; safe metadata only (lib/wallet/metadata.ts).
+  const metadata = validateWalletMetadata(input);
 
   const [existing] = await db.select().from(wallets).where(eq(wallets.accountId, input.accountId));
   if (existing) {
-    if (existing.privyWalletId !== input.privyWalletId) {
+    if (existing.privyWalletId !== metadata.privyWalletId) {
       throw new UserFacingError("WALLET_EXISTS", "This account already has an execution wallet.");
     }
     return existing;
@@ -165,9 +207,9 @@ export async function registerWallet(
     .insert(wallets)
     .values({
       accountId: input.accountId,
-      privyWalletId: input.privyWalletId,
-      address: getAddress(input.address),
-      chainId: MONAD_TESTNET_CHAIN_ID
+      privyWalletId: metadata.privyWalletId,
+      address: metadata.address,
+      chainId: metadata.chainId
     })
     .returning();
   await recordAudit(db, {

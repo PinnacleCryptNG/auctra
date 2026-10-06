@@ -74,8 +74,11 @@ function WalletSection() {
       <CardHeader id="wallet-heading" title="Auctra Wallet" description="The wallet your automations send from. You own it; Auctra never sees its keys." />
       <CardBody>
         <dl className="grid gap-4 sm:grid-cols-2">
-          <Detail label="Status">
-            {granted ? <Badge tone="success" icon={<IconShield />}>Connected</Badge> : <Badge tone="warning">Permission needed</Badge>}
+          <Detail label="Wallet">
+            <Badge tone="success" icon={<IconShield />}>Connected</Badge>
+          </Detail>
+          <Detail label="Automations">
+            {granted ? <Badge tone="success">Can run automations</Badge> : <Badge tone="warning">Permission needed</Badge>}
           </Detail>
           <Detail label="Network">
             <span className="inline-flex flex-wrap items-center gap-2">

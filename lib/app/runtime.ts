@@ -14,7 +14,15 @@ import { createTelegramNotifier } from "../services/notifications";
 import { createTelegramClient } from "../telegram/api";
 import type { BotDeps } from "../telegram/bot";
 import { parseUsdcAmount, readUsdcBalance } from "../usdc";
-import { buildUsdcTransferPolicy, createPrivyClient, createPrivySigner, privyConfigFromEnv, type PrivyConfig } from "../wallet/privy";
+import {
+  buildUsdcTransferPolicy,
+  createPrivyClient,
+  createPrivySigner,
+  privyAppConfigFromEnv,
+  privyConfigFromEnv,
+  PrivyNotConfiguredError,
+  type PrivyConfig
+} from "../wallet/privy";
 
 // Production wiring. Everything is created lazily so builds don't need secrets.
 
@@ -24,13 +32,28 @@ function required(name: string) {
   return value;
 }
 
+let appClient: PrivyClient | undefined;
+/** Privy client for sign-in verification and wallet lookups (app ID + secret only). */
+export function getPrivyClient(): PrivyClient {
+  if (!appClient) appClient = createPrivyClient(privyAppConfigFromEnv());
+  return appClient;
+}
+
 let privy: { client: PrivyClient; config: PrivyConfig } | undefined;
+/** Privy client plus Auctra's authorization key, for signer/policy paths only. */
 export function getPrivy() {
   if (!privy) {
     const config = privyConfigFromEnv();
-    privy = { client: createPrivyClient(config), config };
+    privy = { client: getPrivyClient(), config };
   }
   return privy;
+}
+
+/** The key quorum ID of Auctra's authorization key (session signer + policy owner). */
+export function getSignerId() {
+  const id = process.env.PRIVY_SIGNER_ID;
+  if (!id) throw new PrivyNotConfiguredError(["PRIVY_SIGNER_ID"]);
+  return id;
 }
 
 export function getTelegram() {
@@ -87,7 +110,7 @@ export async function syncTransferPolicy(db: Db, accountId: string): Promise<str
     return wallet.privyPolicyId;
   }
 
-  const created = await client.policies().create({ ...policy, owner_id: required("PRIVY_SIGNER_ID") });
+  const created = await client.policies().create({ ...policy, owner_id: getSignerId() });
   await db.update(wallets).set({ privyPolicyId: created.id }).where(eq(wallets.id, wallet.id));
   return created.id;
 }

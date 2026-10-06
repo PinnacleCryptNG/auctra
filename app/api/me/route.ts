@@ -9,7 +9,7 @@ export const GET = withAuth(async (auth) => {
     user: ctx ? { timezone: ctx.user.timezone } : null,
     account: ctx?.account ? { id: ctx.account.id, type: ctx.account.type, businessName: ctx.account.businessName } : null,
     wallet: ctx?.wallet
-      ? { address: ctx.wallet.address, signerStatus: ctx.wallet.signerStatus, balanceFloor: ctx.wallet.balanceFloor }
+      ? { address: ctx.wallet.address, chainId: ctx.wallet.chainId, signerStatus: ctx.wallet.signerStatus, balanceFloor: ctx.wallet.balanceFloor }
       : null,
     limits: { maxTransferUsdc: AuctraConfig.maxTransferUsdc, dailyCapUsdc: AuctraConfig.dailyCapUsdc }
   });

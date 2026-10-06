@@ -1,6 +1,6 @@
 "use client";
 
-import { usePrivy, useSigners } from "@privy-io/react-auth";
+import { useCreateWallet, usePrivy, useSigners, useWallets } from "@privy-io/react-auth";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { DestinationForm } from "@/components/auctra/destination-form";
@@ -119,6 +119,13 @@ function Onboarding() {
           setError(friendlyError(e, "This setup link didn't work"));
         }
       }
+      // Make sure this Privy login has an Auctra user record (idempotent).
+      try {
+        await request("/api/auth/session", { method: "POST" });
+      } catch (e) {
+        setError(friendlyError(e, "Couldn't start your setup"));
+        return;
+      }
       await refresh();
     })();
   }, [ready, authenticated, token, request, refresh]);
@@ -157,10 +164,8 @@ function Onboarding() {
           <LoadingState label="Loading your setup…" rows={0} />
         ) : !me.linked ? (
           <Card className="p-5 sm:p-7">
-            <h1 className="text-h1">Start from Telegram</h1>
-            <p className="mt-2 text-secondary">
-              Open the Auctra bot in Telegram and send /start. It sends you a setup button that connects this login to your chat.
-            </p>
+            <h1 className="text-h1">Setup couldn&apos;t start</h1>
+            <p className="mt-2 text-secondary">Sign out and sign in again. If it keeps happening, try again later.</p>
           </Card>
         ) : step === 0 ? (
           <AccountStep onDone={refresh} />
@@ -268,13 +273,34 @@ function AccountStep({ onDone }: { onDone: () => void }) {
   );
 }
 
+/**
+ * Uses Privy's own state for the embedded wallet: wait until Privy has loaded
+ * wallets, create the embedded wallet if Privy didn't on login, then let the
+ * server look it up by the verified user and store its safe metadata.
+ */
 function WalletStep({ onDone }: { onDone: () => void }) {
   const { request } = useApi();
+  const { ready: walletsReady, wallets } = useWallets();
+  const { createWallet } = useCreateWallet();
   const [error, setError] = useState<{ title: string; description: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<null | "create" | "connect">(null);
+  const embedded = wallets.find((w) => w.walletClientType === "privy");
 
-  async function register() {
-    setBusy(true);
+  async function create() {
+    setBusy("create");
+    setError(null);
+    try {
+      await createWallet();
+    } catch {
+      // Privy's own error text is never shown to the user.
+      setError({ title: "Your wallet couldn't be created", description: "Try again in a moment." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function connect() {
+    setBusy("connect");
     setError(null);
     try {
       await request("/api/onboarding/wallet", { method: "POST" });
@@ -282,7 +308,7 @@ function WalletStep({ onDone }: { onDone: () => void }) {
     } catch (e) {
       setError(friendlyError(e, "Your wallet isn't connected yet"));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -290,13 +316,33 @@ function WalletStep({ onDone }: { onDone: () => void }) {
     <StepCard
       index={1}
       title="Connect your Auctra Wallet"
-      description="A wallet was created for you when you signed in. You own it, and Auctra never sees its keys. Connect it so your automations can send from it."
+      description="Your Auctra Wallet is created and secured by Privy. You own it, and Auctra never sees its keys. Connect it so your automations can send from it on Monad Testnet."
     >
       <div className="grid gap-4">
+        {!walletsReady ? (
+          <LoadingState label="Checking for your wallet…" rows={0} />
+        ) : embedded ? (
+          <div className="grid gap-1 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="text-h3">Auctra Wallet</span>
+              <TestnetBadge />
+            </span>
+            <Address value={embedded.address} label="Wallet address" />
+          </div>
+        ) : (
+          <p className="text-sm text-ink-2">No wallet yet. Create one now; it takes a few seconds and needs no seed phrase.</p>
+        )}
         {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
-        <Button size="lg" onClick={register} loading={busy} loadingLabel="Connecting wallet…" className="w-full sm:w-auto sm:justify-self-start">
-          Connect wallet
-        </Button>
+        {walletsReady &&
+          (embedded ? (
+            <Button size="lg" onClick={connect} loading={busy === "connect"} loadingLabel="Connecting wallet…" className="w-full sm:w-auto sm:justify-self-start">
+              Connect wallet
+            </Button>
+          ) : (
+            <Button size="lg" onClick={create} loading={busy === "create"} loadingLabel="Creating your wallet…" className="w-full sm:w-auto sm:justify-self-start">
+              Create wallet
+            </Button>
+          ))}
       </div>
     </StepCard>
   );

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db/client";
 import { confirmations } from "../db/schema";
 import type { FinancialIntent } from "../lib/financial-intent";
-import { consumeLinkToken, createAccount, createLinkToken, getOrCreateTelegramUser } from "../lib/services/accounts";
+import { consumeLinkToken, createAccount, createLinkToken, getOrCreatePrivyUser, getOrCreateTelegramUser, registerWallet } from "../lib/services/accounts";
 import { activateAutomation, changeAutomationStatus, listAutomations, prepareAutomation } from "../lib/services/automations";
 import { archiveDestination, findDestinationByLabel, proposeDestination } from "../lib/services/destinations";
 import { createTestDb } from "./helpers/db";
@@ -48,6 +48,48 @@ describe("accounts", () => {
     });
     const account = await createAccount(db, { userId: user.id, type: "BUSINESS", businessName: " Acme Labs ", timezone: "UTC" });
     expect(account.businessName).toBe("Acme Labs");
+  });
+});
+
+describe("Privy sign-in users", () => {
+  it("creates one Auctra user per Privy login, idempotently", async () => {
+    const first = await getOrCreatePrivyUser(db, "did:privy:web-first");
+    const again = await getOrCreatePrivyUser(db, "did:privy:web-first");
+    expect(again.id).toBe(first.id);
+    expect(first.telegramId).toBeNull();
+    await expect(getOrCreatePrivyUser(db, "")).rejects.toMatchObject({ code: "INVALID_USER" });
+  });
+
+  it("attaches Telegram to a user who signed in on the web first", async () => {
+    const webUser = await getOrCreatePrivyUser(db, "did:privy:web-first");
+    const telegramUser = await getOrCreateTelegramUser(db, { telegramId: "777", chatId: "777" });
+    const token = await createLinkToken(db, telegramUser.id);
+
+    const linked = await consumeLinkToken(db, token, "did:privy:web-first");
+    expect(linked.id).toBe(webUser.id);
+    expect(linked.telegramId).toBe("777");
+    // The bot now finds the same user for this Telegram account.
+    expect((await getOrCreateTelegramUser(db, { telegramId: "777", chatId: "777" })).id).toBe(webUser.id);
+  });
+
+  it("refuses to merge when the Telegram user already has an account", async () => {
+    await getOrCreatePrivyUser(db, "did:privy:web-first");
+    const telegramUser = await getOrCreateTelegramUser(db, { telegramId: "778", chatId: "778" });
+    await createAccount(db, { userId: telegramUser.id, type: "INDIVIDUAL", timezone: "UTC" });
+    const token = await createLinkToken(db, telegramUser.id);
+    await expect(consumeLinkToken(db, token, "did:privy:web-first")).rejects.toMatchObject({ code: "LINK_CONFLICT" });
+  });
+
+  it("rejects wallets on any chain other than Monad Testnet", async () => {
+    const user = await getOrCreatePrivyUser(db, "did:privy:chain");
+    const account = await createAccount(db, { userId: user.id, type: "INDIVIDUAL", timezone: "UTC" });
+    for (const chainId of [143, 1, 8453]) { // testnet-guard-ignore
+      await expect(
+        registerWallet(db, { accountId: account.id, userId: user.id, privyWalletId: "w1", address: "0x71c9a3f9c21b04de8a5c6f1e2d3b4a5968778992", chainId })
+      ).rejects.toMatchObject({ code: "WRONG_CHAIN" });
+    }
+    const wallet = await registerWallet(db, { accountId: account.id, userId: user.id, privyWalletId: "w1", address: "0x71c9a3f9c21b04de8a5c6f1e2d3b4a5968778992", chainId: 10143 });
+    expect(wallet.chainId).toBe(10143);
   });
 });
 

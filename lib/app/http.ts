@@ -5,11 +5,20 @@ import { ZodError, type z } from "zod";
 import { getDb, type Db } from "../../db/client";
 import { getAccountContext, type AccountContext } from "../services/accounts";
 import { UserFacingError } from "../services/errors";
-import { getPrivy } from "./runtime";
+import { ConfigurationError } from "../config";
+import { getPrivyClient } from "./runtime";
 
 export type AuthedContext = { db: Db; privyUserId: string; ctx: AccountContext | null };
 
 export function errorResponse(error: unknown) {
+  if (error instanceof ConfigurationError) {
+    // Names of the missing variables go to the server log only; never values.
+    console.error(error.message);
+    return NextResponse.json(
+      { error: { code: "NOT_CONFIGURED", message: "Wallet sign-in isn't set up on this server yet." } },
+      { status: 503 }
+    );
+  }
   if (error instanceof UserFacingError) {
     return NextResponse.json({ error: { code: error.code, message: error.message } }, { status: error.code === "NOT_FOUND" ? 404 : 400 });
   }
@@ -20,18 +29,35 @@ export function errorResponse(error: unknown) {
   return NextResponse.json({ error: { code: "INTERNAL", message: "Something went wrong." } }, { status: 500 });
 }
 
-/** Verifies the Privy access token (Authorization: Bearer) and loads the caller's account. */
-export async function authenticate(request: Request): Promise<AuthedContext | null> {
+export type AuthDeps = {
+  /** Verifies a Privy access token and returns its Privy user ID; throws if invalid. */
+  verifyAccessToken: (token: string) => Promise<{ user_id: string }>;
+  db: Db;
+};
+
+function productionAuthDeps(): AuthDeps {
+  const client = getPrivyClient();
+  return { verifyAccessToken: (token) => client.utils().auth().verifyAccessToken(token), db: getDb() };
+}
+
+/**
+ * Verifies the Privy access token (Authorization: Bearer) and loads the
+ * caller's Auctra account. Returns null for a missing or invalid token.
+ * Missing server configuration is NOT treated as a bad token: it throws.
+ */
+export async function authenticate(request: Request, deps?: AuthDeps): Promise<AuthedContext | null> {
   const header = request.headers.get("authorization") ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : null;
   if (!token) return null;
+  const { verifyAccessToken, db } = deps ?? productionAuthDeps();
+  let privyUserId: string;
   try {
-    const claims = await getPrivy().client.utils().auth().verifyAccessToken(token);
-    const db = getDb();
-    return { db, privyUserId: claims.user_id, ctx: await getAccountContext(db, { privyUserId: claims.user_id }) };
+    privyUserId = (await verifyAccessToken(token)).user_id;
   } catch {
     return null;
   }
+  if (!privyUserId) return null;
+  return { db, privyUserId, ctx: await getAccountContext(db, { privyUserId }) };
 }
 
 type Handler<P> = (auth: AuthedContext, request: Request, params: P) => Promise<Response>;

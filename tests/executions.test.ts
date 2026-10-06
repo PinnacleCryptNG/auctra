@@ -174,6 +174,23 @@ describe("preflight (fail closed)", () => {
     expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
   });
 
+  it("rejects when permission was never granted, and never calls the signer", async () => {
+    await setup(intent, { signer: false });
+    const deps = makeDeps();
+    const { execution } = await runWith(deps);
+    expect(execution.status).toBe("REJECTED");
+    expect(execution.errorCode).toBe("MISSING_PERMISSION");
+    expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("Run now is also refused without permission", async () => {
+    const { ctx, automation } = await setup(intent, { signer: false });
+    const deps = makeDeps();
+    const execution = await runNow(db, deps, { accountId: ctx.account!.id, automationId: automation.id, requestId: "request-perm-1", userId: ctx.user.id }, CREATED);
+    expect(execution).toMatchObject({ status: "REJECTED", errorCode: "MISSING_PERMISSION" });
+    expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
+  });
+
   it("skips when the 24h daily cap would be exceeded", async () => {
     const { ctx, automation } = await setup({ ...intent, amount: "100" });
     const deps = makeDeps();

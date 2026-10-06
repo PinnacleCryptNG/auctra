@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { readJson, requireReady, withAuth } from "@/lib/app/http";
-import { getPrivy, syncTransferPolicy } from "@/lib/app/runtime";
+import { getPrivyClient, getSignerId as signerId, syncTransferPolicy } from "@/lib/app/runtime";
 import { setSignerStatus } from "@/lib/services/accounts";
 import { UserFacingError } from "@/lib/services/errors";
 
-function signerId() {
-  const id = process.env.PRIVY_SIGNER_ID;
-  if (!id) throw new Error("PRIVY_SIGNER_ID is not configured.");
-  return id;
-}
 
 /** Returns what the browser needs to add Auctra's session signer with its policy (PRD §7.2). */
 export const GET = withAuth(async (auth) => {
@@ -28,7 +23,7 @@ export const POST = withAuth(async (auth, request) => {
     return NextResponse.json({ status: "REVOKED" });
   }
 
-  const wallet = await getPrivy().client.wallets().get(ctx.wallet.privyWalletId);
+  const wallet = await getPrivyClient().wallets().get(ctx.wallet.privyWalletId);
   const signer = wallet.additional_signers.find((s) => s.signer_id === signerId());
   if (!signer) throw new UserFacingError("SIGNER_MISSING", "Auctra's permission wasn't found on your wallet. Please try again.");
   if (!ctx.wallet.privyPolicyId || !signer.override_policy_ids?.includes(ctx.wallet.privyPolicyId)) {

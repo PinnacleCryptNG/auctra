@@ -63,12 +63,19 @@ export function AuctraDataProvider({ children }: { children: ReactNode }) {
     [load]
   );
 
-  // Load "me" first; account data only once onboarding is complete.
+  // After Privy sign-in, make sure the Auctra user exists, then load "me".
+  // Account data loads only once onboarding is complete.
   useEffect(() => {
     (async () => {
+      try {
+        await request("/api/auth/session", { method: "POST" });
+      } catch (error) {
+        setMe({ data: null, loading: false, error });
+        return;
+      }
       await refresh(["me"]);
     })();
-  }, [refresh]);
+  }, [refresh, request]);
 
   const ready = Boolean(me.data?.account && me.data.wallet);
   useEffect(() => {

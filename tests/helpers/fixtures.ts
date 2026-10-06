@@ -25,7 +25,8 @@ export async function createFixture(
     accountId: account.id,
     userId: user.id,
     privyWalletId: `privy-wallet-${counter}`,
-    address: `0x${counter.toString(16).padStart(40, "a")}`
+    address: `0x${counter.toString(16).padStart(40, "a")}`,
+    chainId: 10143
   });
   if (options.signer !== false) {
     await setSignerStatus(db, { accountId: account.id, userId: user.id, status: "GRANTED", privyPolicyId: "policy-1" });

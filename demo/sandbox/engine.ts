@@ -289,7 +289,7 @@ export async function boot(type: AccountType) {
   const user = await getOrCreateTelegramUser(db, { telegramId: String(TELEGRAM_ID), chatId: String(TELEGRAM_ID) });
   const account = await createAccount(db, { userId: user.id, type, businessName: type === "BUSINESS" ? "Acme Labs" : undefined, timezone: TIMEZONE });
   walletAddress = getAddress(type === "BUSINESS" ? "0x7a3f9c21b04de8a5c6f1e2d3b4a5968778899abc" : "0x1c0ffee2541f0b3d9e8a7c6b5a4d3e2f1a0b9c8d");
-  await registerWallet(db, { accountId: account.id, userId: user.id, privyWalletId: "sandbox-wallet", address: walletAddress });
+  await registerWallet(db, { accountId: account.id, userId: user.id, privyWalletId: "sandbox-wallet", address: walletAddress, chainId: 10143 });
   await setSignerStatus(db, { accountId: account.id, userId: user.id, status: "GRANTED", privyPolicyId: "sandbox-policy" });
   for (const d of SEED[type]) {
     const proposal = await proposeDestination(db, { userId: user.id, accountId: account.id, walletAddress, ...d });
@@ -347,12 +347,14 @@ export async function handleApi(method: string, pathname: string, body: unknown)
     const id = pathname.match(/[0-9a-f-]{36}/)?.[0] ?? "";
 
     switch (route) {
+      case "POST /api/auth/session":
+        return json({ linked: true, hasAccount: true, hasWallet: true });
       case "GET /api/me":
         return json({
           linked: true,
           user: { timezone: ctx.user.timezone },
           account: { id: ctx.account.id, type: ctx.account.type, businessName: ctx.account.businessName },
-          wallet: { address: ctx.wallet.address, signerStatus: ctx.wallet.signerStatus, balanceFloor: ctx.wallet.balanceFloor },
+          wallet: { address: ctx.wallet.address, chainId: ctx.wallet.chainId, signerStatus: ctx.wallet.signerStatus, balanceFloor: ctx.wallet.balanceFloor },
           limits: { maxTransferUsdc: AuctraConfig.maxTransferUsdc, dailyCapUsdc: AuctraConfig.dailyCapUsdc }
         });
       case "GET /api/balance":

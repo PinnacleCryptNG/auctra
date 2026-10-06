@@ -7,6 +7,7 @@ import { StatusScreen } from "@/components/auctra/status-screen";
 import { Button, ButtonLink, Card, ErrorState, LoadingState } from "@/components/ui";
 import { friendlyError } from "@/lib/client/api";
 import { AuctraDataProvider, useAuctra } from "@/lib/client/auctra-data";
+import { walletReadiness } from "@/lib/client/readiness";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
@@ -72,25 +73,23 @@ function AccountGate({ children }: { children: ReactNode }) {
       </StatusScreen>
     );
   }
-  const data = me.data;
-  if (!data?.linked || !data.account || !data.wallet) {
+  const readiness = walletReadiness(true, me.data);
+  if (readiness === "account_needed" || readiness === "wallet_pending") {
     return (
       <StatusScreen>
         <Card className="p-6 sm:p-8">
           <div className="grid gap-5">
             <div className="grid gap-2">
-              <h1 className="text-h1">Finish setting up</h1>
+              <h1 className="text-h1">{readiness === "account_needed" ? "Finish setting up" : "Connect your Auctra Wallet"}</h1>
               <p className="text-secondary">
-                {!data?.linked
-                  ? "Open the Auctra bot in Telegram and send /start. It sends you a setup link that connects this login to your chat."
-                  : "Choose your account type and connect your wallet to start creating automations."}
+                {readiness === "account_needed"
+                  ? "Choose your account type and connect your Auctra Wallet to start creating automations."
+                  : "Your account is ready. Connect your Auctra Wallet on Monad Testnet to continue."}
               </p>
             </div>
-            {data?.linked && (
-              <ButtonLink href="/onboarding" size="lg" className="w-full">
-                Continue setup
-              </ButtonLink>
-            )}
+            <ButtonLink href="/onboarding" size="lg" className="w-full">
+              Continue setup
+            </ButtonLink>
             <Button variant="ghost" onClick={logout}>
               Sign out
             </Button>
@@ -100,5 +99,6 @@ function AccountGate({ children }: { children: ReactNode }) {
     );
   }
 
+  // "permission_needed" still opens the app, with a visible warning and no automatic sending.
   return <AppShell onSignOut={logout}>{children}</AppShell>;
 }

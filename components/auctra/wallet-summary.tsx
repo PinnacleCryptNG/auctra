@@ -58,7 +58,8 @@ export function WalletSummary({
         <div className="grid min-w-0 flex-1 gap-0.5">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-h3">Auctra Wallet</span>
-            {granted ? <Badge tone="success" icon={<IconShield />}>Connected</Badge> : <Badge tone="warning">Permission needed</Badge>}
+            <Badge tone="success" icon={<IconShield />}>Connected</Badge>
+            {!granted && <Badge tone="warning">Permission needed</Badge>}
           </span>
           {me.wallet && <Address value={me.wallet.address} label="Wallet address" />}
         </div>
