@@ -276,8 +276,11 @@ export function CreateAutomationDialog() {
           ? "All set"
           : "Create automation";
 
+  // On the review screens, Back returns to the request exactly as typed.
+  const canGoBack = phase.name === "result" && ["confirm", "set_floor", "needs_destination"].includes(phase.result.kind) && !busy;
+
   return (
-    <Dialog open={createRequest.open} onClose={closeCreate} title={title} description={phase.name === "compose" ? "Tell Auctra what you want your money to do." : undefined} footer={footer} size="md">
+    <Dialog open={createRequest.open} onClose={closeCreate} onBack={canGoBack ? edit : undefined} title={title} description={phase.name === "compose" ? "Tell Auctra what you want your money to do." : undefined} footer={footer} size="md">
       {body}
     </Dialog>
   );

@@ -8,6 +8,7 @@ import { Button, ButtonLink, Card, ErrorState, LoadingState } from "@/components
 import { friendlyError } from "@/lib/client/api";
 import { AuctraDataProvider, useAuctra } from "@/lib/client/auctra-data";
 import { walletReadiness } from "@/lib/client/readiness";
+import { useSignOut } from "@/lib/client/use-sign-out";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
@@ -55,7 +56,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function AccountGate({ children }: { children: ReactNode }) {
-  const { logout } = usePrivy();
+  const logout = useSignOut();
   const { me, refresh } = useAuctra();
 
   if (me.loading && !me.data) {

@@ -1,6 +1,6 @@
 import { ConfirmationCard } from "@/components/auctra/confirmation-card";
 import { SiteFooter, SiteHeader, START_HREF, START_LABEL } from "@/components/auctra/site-chrome";
-import { ButtonLink, IconArrowRight, IconCheck, IconShield, IconSkip, IconX } from "@/components/ui";
+import { ButtonLink, IconActivity, IconArrowRight, IconCheck, IconContacts, IconGauge, IconKey, IconShield, IconSkip, IconX } from "@/components/ui";
 import type { AutomationPreview } from "@/lib/client/api";
 
 // A realistic example, rendered with the same component users confirm with.
@@ -69,10 +69,10 @@ const RECEIPTS = [
 ];
 
 const SAFETY = [
-  { title: "Your keys stay yours", text: "We never ask for them." },
-  { title: "Saved recipients only", text: "No surprise addresses." },
-  { title: "Hard limits", text: "Per transfer and per day." },
-  { title: "A receipt every run", text: "Sent, skipped or blocked." }
+  { title: "Your keys stay yours", text: "We never ask for them.", icon: <IconKey /> },
+  { title: "Saved recipients only", text: "No surprise addresses.", icon: <IconContacts /> },
+  { title: "Hard limits", text: "Per transfer and per day.", icon: <IconGauge /> },
+  { title: "A receipt every run", text: "Sent, skipped or blocked.", icon: <IconActivity /> }
 ];
 
 export default function Home() {
@@ -199,7 +199,7 @@ export default function Home() {
       <section id="safety" aria-labelledby="safety-heading" className="scroll-mt-4">
         <div className="mx-auto grid max-w-[78rem] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-10 lg:py-28">
           <div className="grid content-start gap-5">
-            <span className="grid size-12 place-items-center rounded-2xl bg-obsidian text-xl text-signal">
+            <span className="grid size-12 place-items-center rounded-2xl bg-obsidian text-2xl text-cloud [--icon-dot:var(--color-signal)]">
               <IconShield />
             </span>
             <h2 id="safety-heading" className="text-h1 max-w-[16ch] sm:text-[2.75rem]">
@@ -208,6 +208,9 @@ export default function Home() {
             <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2">
               {SAFETY.map((item) => (
                 <div key={item.title} className="bg-surface p-5">
+                  <span className="mb-3 grid size-11 place-items-center rounded-xl bg-obsidian text-2xl text-cloud [--icon-dot:var(--color-signal)]">
+                    {item.icon}
+                  </span>
                   <h3 className="text-h3">{item.title}</h3>
                   <p className="mt-1.5 text-secondary">{item.text}</p>
                 </div>

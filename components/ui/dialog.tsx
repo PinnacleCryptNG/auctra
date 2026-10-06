@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { IconX } from "./icons";
+import { IconArrowLeft, IconX } from "./icons";
 
 /**
  * Modal built on the native <dialog> (focus trap, Esc and focus return come
@@ -15,10 +15,13 @@ export function Dialog({
   description,
   children,
   footer,
-  size = "md"
+  size = "md",
+  onBack
 }: {
   open: boolean;
   onClose: () => void;
+  /** Shows a back arrow before the title. */
+  onBack?: () => void;
   title: string;
   description?: ReactNode;
   children: ReactNode;
@@ -57,7 +60,17 @@ export function Dialog({
     >
       <div className="flex max-h-[92dvh] flex-col rounded-t-[var(--radius-surface)] bg-surface shadow-[var(--shadow-overlay)] sm:max-h-[85dvh] sm:rounded-[var(--radius-surface)]">
         <header className="flex items-start gap-3 border-b border-line px-4 py-4 sm:px-6">
-          <div className="grid min-w-0 flex-1 gap-0.5">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="-ml-2 grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-lg text-ink hover:bg-slate-soft"
+            >
+              <IconArrowLeft />
+              <span className="sr-only">Back</span>
+            </button>
+          )}
+          <div className={`grid min-w-0 flex-1 gap-0.5 ${onBack ? "pt-1.5" : ""}`}>
             <h2 id={titleId} className="text-h2">
               {title}
             </h2>
