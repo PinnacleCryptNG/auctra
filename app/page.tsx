@@ -1,6 +1,6 @@
 import { ConfirmationCard } from "@/components/auctra/confirmation-card";
 import { SiteFooter, SiteHeader, START_HREF, START_LABEL } from "@/components/auctra/site-chrome";
-import { ButtonLink, IconArrowRight, IconCheck, IconShield, IconSkip, IconX, TestnetBadge } from "@/components/ui";
+import { ButtonLink, IconArrowRight, IconCheck, IconShield, IconSkip, IconX } from "@/components/ui";
 import type { AutomationPreview } from "@/lib/client/api";
 
 // A realistic example, rendered with the same component users confirm with.
@@ -31,48 +31,48 @@ const COMMANDS = [
 
 const STEPS = [
   {
-    tag: "You say",
-    title: "Write it like a text message",
-    text: "Amount, who, when, and any condition. In Telegram or on the web. No forms, no cron syntax."
+    tag: "Say it",
+    title: "Type it like a text",
+    text: "“Save 20 every Friday.” That's it."
   },
   {
-    tag: "You check",
-    title: "See exactly what Auctra heard",
-    text: "Amount, schedule, recipient and network come back as plain fields. Nothing runs until you tap confirm."
+    tag: "Check it",
+    title: "Tap confirm",
+    text: "Nothing runs until you say yes."
   },
   {
-    tag: "It runs",
-    title: "Auctra keeps the promise",
-    text: "Before every run it checks your balance and limits, then sends. You get a receipt each time."
+    tag: "Done",
+    title: "Auctra handles it",
+    text: "On time, with a receipt every run."
   }
 ];
 
 const USE_CASES = [
   {
     who: "For you",
-    title: "Saving that doesn't depend on willpower",
-    items: ["Save 20 USDC every Friday at 6 PM", "Pay rent on the 1st of every month", "Only send if my balance is above 300", "Keep a 300 USDC floor in my wallet"],
+    title: "Save without thinking",
+    items: ["Save 20 every Friday", "Pay rent on the 1st", "Keep 300 in my wallet"],
     tone: "signal" as const
   },
   {
     who: "For your business",
-    title: "Payables that pay themselves",
-    items: ["Pay a vendor 80 USDC monthly with an invoice memo", "Pay a contractor 100 USDC every Friday", "Sweep 50 USDC to reserve each Monday", "Hold 1,000 USDC in the operating wallet"],
+    title: "Bills that pay themselves",
+    items: ["Pay my vendor 80 monthly", "Pay Ada 100 every Friday", "Sweep 50 to reserve on Mondays"],
     tone: "flare" as const
   }
 ];
 
 const RECEIPTS = [
   { when: "Fri 18:00", what: "Sent 20 USDC to Savings wallet", status: "Sent", icon: <IconCheck />, tone: "bg-signal text-obsidian" },
-  { when: "Mon 09:00", what: "Skipped: balance was 240, rule says above 300", status: "Skipped", icon: <IconSkip />, tone: "bg-amber-soft text-amber-ink" },
-  { when: "Tue 12:00", what: "Blocked: over your 100 USDC daily limit", status: "Blocked", icon: <IconX />, tone: "bg-flare-soft text-flare-ink" }
+  { when: "Mon 09:00", what: "Skipped: balance under 300", status: "Skipped", icon: <IconSkip />, tone: "bg-amber-soft text-amber-ink" },
+  { when: "Tue 12:00", what: "Blocked: over daily limit", status: "Blocked", icon: <IconX />, tone: "bg-flare-soft text-flare-ink" }
 ];
 
 const SAFETY = [
-  { title: "Your keys stay yours", text: "Auctra never asks for a seed phrase or private key. Your wallet lives with you." },
-  { title: "Saved recipients only", text: "Money can only go to destinations you added yourself, never to an address a message invents." },
-  { title: "Limits, enforced twice", text: "Per-transfer and daily caps are checked by Auctra and again by your wallet provider." },
-  { title: "Every run has an answer", text: "Sent, skipped or blocked, always with the reason. No silent failures." }
+  { title: "Your keys stay yours", text: "We never ask for them." },
+  { title: "Saved recipients only", text: "No surprise addresses." },
+  { title: "Hard limits", text: "Per transfer and per day." },
+  { title: "A receipt every run", text: "Sent, skipped or blocked." }
 ];
 
 export default function Home() {
@@ -87,16 +87,11 @@ export default function Home() {
           <main id="main">
             <section className="mx-auto grid max-w-[78rem] items-center gap-12 px-4 pt-8 pb-20 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,27rem)] lg:gap-16 lg:px-10 lg:pt-20 lg:pb-28">
               <div className="grid gap-7">
-                <p className="inline-flex w-fit items-center gap-2 rounded-full border border-cloud/15 bg-obsidian-2/70 py-1 pr-3.5 pl-1.5 text-sm text-cloud/80">
-                  <span className="rounded-full bg-signal px-2 py-0.5 text-xs font-semibold text-obsidian">New</span>
-                  An autonomous agent for your USDC
-                </p>
                 <h1 className="text-display max-w-[13ch]">
                   Money that <span className="accent-italic">moves itself.</span>
                 </h1>
                 <p className="max-w-[34rem] text-[1.0625rem] leading-relaxed text-cloud/75">
-                  Tell Auctra what should happen to your money in one sentence. It shows you exactly what it understood, then pays, saves and
-                  sweeps on schedule, inside limits only you can change.
+                  Say it once. Auctra pays, saves and sweeps for you, on time, every time.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <ButtonLink href={START_HREF} size="lg" icon={<IconArrowRight />} className="flex-row-reverse shadow-[4px_4px_0_0_var(--color-flare)]">
@@ -106,9 +101,6 @@ export default function Home() {
                     See how it works
                   </ButtonLink>
                 </div>
-                <p className="flex flex-wrap items-center gap-2 text-sm text-cloud/60">
-                  <TestnetBadge /> Live on Monad Testnet with test USDC, so no real money is at risk.
-                </p>
               </div>
 
               <figure className="relative grid gap-3" aria-label="Example: a request and Auctra's confirmation">
@@ -118,10 +110,6 @@ export default function Home() {
                 <div className="rotate-[-1.2deg] rounded-[var(--radius-surface)] bg-cloud p-1.5 text-ink shadow-[8px_8px_0_0_var(--color-signal)] transition-transform duration-300 hover:rotate-0">
                   <ConfirmationCard preview={EXAMPLE} />
                 </div>
-                <figcaption className="mt-2 flex items-center gap-2 text-sm text-cloud/70">
-                  <IconCheck className="text-signal" />
-                  Confirm once. Every Friday after that is handled.
-                </figcaption>
               </figure>
             </section>
           </main>
@@ -147,14 +135,9 @@ export default function Home() {
       {/* How it works */}
       <section id="how" aria-labelledby="how-heading" className="bg-ledger scroll-mt-4">
         <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end">
-            <h2 id="how-heading" className="text-h1 max-w-[18ch] sm:text-[2.75rem]">
-              Three steps. <span className="accent-italic">Then never again.</span>
-            </h2>
-            <p className="text-body text-ink-2">
-              Auctra reads your request with AI, but every transfer is checked and sent by plain rules you can see and edit.
-            </p>
-          </div>
+          <h2 id="how-heading" className="text-h1 max-w-[18ch] sm:text-[2.75rem]">
+            Three steps. <span className="accent-italic">Then never again.</span>
+          </h2>
           <ol className="mt-12 grid gap-5 md:grid-cols-3">
             {STEPS.map((step, index) => (
               <li
@@ -180,7 +163,7 @@ export default function Home() {
         <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
           <p className="text-meta">Use cases</p>
           <h2 id="use-cases-heading" className="text-h1 mt-3 max-w-[22ch] sm:text-[2.75rem]">
-            For your pocket, and for <span className="accent-italic">your payroll.</span>
+            For you. <span className="accent-italic">And your business.</span>
           </h2>
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {USE_CASES.map((useCase) => (
@@ -221,7 +204,7 @@ export default function Home() {
               <IconShield />
             </span>
             <h2 id="safety-heading" className="text-h1 max-w-[16ch] sm:text-[2.75rem]">
-              Your money moves <span className="accent-italic">only</span> the way you said.
+              Moves <span className="accent-italic">only</span> the way you said.
             </h2>
             <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line sm:grid-cols-2">
               {SAFETY.map((item) => (
@@ -252,7 +235,6 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            <figcaption className="mt-4 text-center text-sm text-slate">A skipped or blocked run is the rule working, and you&apos;re told why.</figcaption>
           </figure>
         </div>
       </section>

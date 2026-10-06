@@ -50,7 +50,7 @@ export default function OverviewPage() {
             <h2 id="create-heading" className="text-h2">
               Tell Auctra what you want your money to do
             </h2>
-            <p className="mt-1 text-secondary">Describe it in plain words. You&apos;ll see exactly what Auctra will do before anything is set up.</p>
+            <p className="mt-1 text-secondary">Just say what you want. You confirm before anything runs.</p>
             <button
               type="button"
               onClick={() => openCreate()}
@@ -99,7 +99,7 @@ export default function OverviewPage() {
                 <EmptyState
                   icon={<IconRepeat />}
                   title="No automations yet"
-                  description="Tell Auctra what you want your money to do and it becomes an automation."
+                  description="Say it once. Auctra handles the rest."
                   action={<Button icon={<IconPlus />} onClick={() => openCreate()}>Create automation</Button>}
                 />
               </Card>
@@ -130,7 +130,7 @@ export default function OverviewPage() {
               loadingLabel="Loading recent transfers…"
               errorTitle="Couldn't load recent activity"
               onRetry={() => refresh(["executions"])}
-              empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="Every transfer Auctra makes, skips or blocks shows up here." />}
+              empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="Runs will show up here." />}
             >
               {(items) => <ExecutionList executions={items.slice(0, 5)} timezone={data.user?.timezone} />}
             </Resource>

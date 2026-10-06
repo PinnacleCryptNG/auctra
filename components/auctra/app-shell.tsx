@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Address, Button, IconActivity, IconHome, IconLogout, IconPlus, IconRepeat, IconSettings, TestnetBadge } from "@/components/ui";
+import { Address, Button, IconActivity, IconHome, IconLogout, IconPlus, IconRepeat, IconSettings } from "@/components/ui";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { CreateAutomationDialog } from "./create-automation";
 import { Logo } from "./logo";
@@ -73,9 +73,6 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
             <p className="text-meta">Signed in as</p>
             <p className="truncate font-display text-lg leading-tight font-medium">{accountName}</p>
             {wallet && <Address value={wallet.address} label="Wallet address" />}
-            <div>
-              <TestnetBadge />
-            </div>
           </div>
           <button
             type="button"
@@ -93,7 +90,6 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-2 backdrop-blur-md pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
           <Logo href="/dashboard" />
           <div className="flex items-center gap-2">
-            <TestnetBadge compact />
             <Button size="sm" icon={<IconPlus />} onClick={() => openCreate()} aria-label="Create automation">
               <span className="hidden min-[400px]:inline">Create</span>
             </Button>

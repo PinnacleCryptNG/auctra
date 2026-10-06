@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui";
-import { Logo, LogoMark } from "./logo";
+import { Logo } from "./logo";
 
 const BOT = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
 export const START_HREF = BOT ? `https://t.me/${BOT}` : "/dashboard";
@@ -38,17 +38,14 @@ export function SiteHeader({ tone = "light" }: { tone?: "dark" | "light" }) {
   );
 }
 
-/** Marketing footer: big wordmark, links, and the testnet note. */
+/** Marketing footer: big wordmark, links, and legal links. */
 export function SiteFooter() {
   return (
     <footer className="bg-grain relative overflow-hidden bg-obsidian text-cloud">
       <div className="mx-auto grid max-w-[78rem] gap-12 px-4 pt-16 pb-10 sm:px-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:px-10">
         <div className="grid content-start gap-5">
           <Logo tone="light" />
-          <p className="max-w-[30rem] text-[0.9375rem] leading-relaxed text-cloud/70">
-            Auctra is an autonomous money agent. Describe a transfer once, approve the limits, and it runs on schedule, inside the rules
-            you set.
-          </p>
+          <p className="max-w-[30rem] text-[0.9375rem] leading-relaxed text-cloud/70">Money that moves itself.</p>
           <div>
             <ButtonLink href={START_HREF} size="md">
               {START_LABEL}
@@ -83,10 +80,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="mx-auto flex max-w-[78rem] flex-col gap-3 border-t border-obsidian-line px-4 py-6 text-xs text-cloud/55 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-        <p>© {new Date().getFullYear()} Auctra. Testnet software: test USDC on Monad Testnet only. Not financial advice.</p>
-        <p className="inline-flex items-center gap-2">
-          <LogoMark className="size-4" /> Built for people who&apos;d rather not remember the 1st of the month.
-        </p>
+        <p>© {new Date().getFullYear()} Auctra</p>
       </div>
       <p
         aria-hidden="true"

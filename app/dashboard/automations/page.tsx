@@ -17,7 +17,7 @@ export default function AutomationsPage() {
     <>
       <PageHeader
         title="Automations"
-        description="Recurring and conditional transfers Auctra runs for you."
+        description="What Auctra runs for you."
         actions={<Button icon={<IconPlus />} onClick={() => openCreate()}>Create automation</Button>}
       />
       <Resource
@@ -32,7 +32,7 @@ export default function AutomationsPage() {
             <EmptyState
               icon={<IconRepeat />}
               title="No automations yet"
-              description="Tell Auctra what you want your money to do and it becomes an automation."
+              description="Say it once. Auctra handles the rest."
               action={<Button icon={<IconPlus />} onClick={() => openCreate()}>Create automation</Button>}
             />
           </Card>

@@ -46,7 +46,7 @@ export function AutomationCard({ automation, onChanged }: { automation: Automati
         execution.status === "CONFIRMED"
           ? { tone: "success", title: `Sent ${amount} to ${automation.destination.label}` }
           : execution.status === "SUBMITTED" || execution.status === "PENDING"
-            ? { tone: "warning", title: "Transfer submitted", text: "Waiting for the network to confirm. It will show in Activity." }
+            ? { tone: "warning", title: "Transfer submitted", text: "Confirming. It will show in Activity." }
             : { tone: "warning", title: "Nothing was sent", text: "See Activity for the reason." }
       );
       await onChanged();
@@ -126,7 +126,7 @@ export function AutomationCard({ automation, onChanged }: { automation: Automati
         open={confirming === "run"}
         onClose={() => setConfirming(null)}
         title={`Send ${amount} now?`}
-        description={`Auctra will send ${amount} to ${automation.destination.label} right away on Monad Testnet. The scheduled runs stay as they are.`}
+        description={`Auctra will send ${amount} to ${automation.destination.label} now. Scheduled runs stay the same.`}
         confirmLabel="Send now"
         tone="primary"
         busy={busy === "run"}

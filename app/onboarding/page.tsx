@@ -17,8 +17,7 @@ import {
   IconShield,
   Input,
   LoadingState,
-  Notice,
-  TestnetBadge
+  Notice
 } from "@/components/ui";
 import { friendlyError, useApi, type Destination, type Me } from "@/lib/client/api";
 import { formatUsdc } from "@/lib/client/format";
@@ -48,7 +47,6 @@ function Shell({ step, children }: { step: number | null; children: React.ReactN
     <div className="bg-ledger min-h-dvh">
       <header className="flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-3 backdrop-blur-md sm:px-6">
         <Logo />
-        <TestnetBadge />
       </header>
       <main id="main" className="mx-auto grid w-full max-w-xl gap-6 px-4 py-8 sm:py-12">
         {step !== null && (
@@ -144,7 +142,7 @@ function Onboarding() {
         <Card className="p-5 sm:p-7">
           <h1 className="text-h1">Set up Auctra</h1>
           <p className="mt-2 text-secondary">
-            Sign in to create your Auctra Wallet on Monad Testnet. You own the wallet. Auctra never asks for a seed phrase or private key.
+            Sign in to get your wallet. No seed phrase needed.
           </p>
           <Button size="lg" className="mt-6 w-full" onClick={login}>
             Sign in
@@ -175,7 +173,7 @@ function Onboarding() {
           <StepCard
             index={2}
             title="Save your first destination"
-            description="Auctra only sends to wallets you've saved and confirmed, like a savings wallet or a vendor."
+            description="Auctra only sends to wallets you save."
           >
             <DestinationForm defaultCategory={me.account?.type === "BUSINESS" ? "VENDOR" : "SAVINGS"} onSaved={refresh} />
           </StepCard>
@@ -219,12 +217,12 @@ function AccountStep({ onDone }: { onDone: () => void }) {
   }
 
   const options = [
-    { value: "INDIVIDUAL" as const, title: "Personal", text: "Savings, recurring payments and balance protection." },
-    { value: "BUSINESS" as const, title: "Business", text: "Vendor and contractor payments, reserve sweeps, operating floor." }
+    { value: "INDIVIDUAL" as const, title: "Personal", text: "Save and pay bills." },
+    { value: "BUSINESS" as const, title: "Business", text: "Pay vendors and staff." }
   ];
 
   return (
-    <StepCard index={0} title="Who is Auctra working for?" description="You can't change this later, so pick the one that fits.">
+    <StepCard index={0} title="Who is Auctra working for?" description="You can't change this later.">
       <form onSubmit={submit} noValidate className="grid gap-5">
         <fieldset className="grid gap-3 sm:grid-cols-2">
           <legend className="sr-only">Account type</legend>
@@ -261,7 +259,7 @@ function AccountStep({ onDone }: { onDone: () => void }) {
             {(p) => <Input {...p} value={businessName} onChange={(e) => setBusinessName(e.target.value)} maxLength={120} autoComplete="organization" />}
           </Field>
         )}
-        <Field label="Timezone" hint="Your schedules run at local times in this timezone.">
+        <Field label="Timezone" hint="Schedules run in this timezone.">
           {(p) => <Input {...p} value={timezone} onChange={(e) => setTimezone(e.target.value)} autoComplete="off" spellCheck={false} />}
         </Field>
         {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
@@ -316,7 +314,7 @@ function WalletStep({ onDone }: { onDone: () => void }) {
     <StepCard
       index={1}
       title="Connect your Auctra Wallet"
-      description="Your Auctra Wallet is created and secured by Privy. You own it, and Auctra never sees its keys. Connect it so your automations can send from it on Monad Testnet."
+      description="You own it. Auctra never sees its keys."
     >
       <div className="grid gap-4">
         {!walletsReady ? (
@@ -325,12 +323,11 @@ function WalletStep({ onDone }: { onDone: () => void }) {
           <div className="grid gap-1 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
             <span className="flex flex-wrap items-center gap-2">
               <span className="text-h3">Auctra Wallet</span>
-              <TestnetBadge />
             </span>
             <Address value={embedded.address} label="Wallet address" />
           </div>
         ) : (
-          <p className="text-sm text-ink-2">No wallet yet. Create one now; it takes a few seconds and needs no seed phrase.</p>
+          <p className="text-sm text-ink-2">No wallet yet. Create one in seconds.</p>
         )}
         {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
         {walletsReady &&
@@ -412,8 +409,8 @@ function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; o
       title={stale ? "Review Auctra's permission again" : "Allow Auctra to send scheduled transfers"}
       description={
         stale
-          ? "Your saved destinations changed, so Auctra's limits changed too. Nothing is sent until you approve them."
-          : "You're giving Auctra limited permission on your wallet so it can run the automations you confirm."
+          ? "Your destinations changed. Approve the new limits to continue."
+          : "Auctra can only do this:"
       }
     >
       <div className="grid gap-5">
@@ -421,11 +418,9 @@ function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; o
         {review && (
           <ul className="grid gap-2.5">
             {[
-              `Send ${review.review.asset} only, on ${review.review.network} (chain ${review.review.chainId}) only`,
-              `At most ${formatUsdc(review.review.maxTransferUsdc)} USDC per transfer`,
-              `At most ${formatUsdc(review.review.dailyCapUsdc)} USDC per 24 hours (checked by Auctra)`,
-              "No other tokens, contracts, signatures or MON transfers",
-              "Only run automations you've confirmed"
+              `Send ${review.review.asset} only`,
+              `Up to ${formatUsdc(review.review.maxTransferUsdc)} USDC per transfer`,
+              `Up to ${formatUsdc(review.review.dailyCapUsdc)} USDC per day`
             ].map((item) => (
               <li key={item} className="flex items-start gap-2.5 text-[0.9375rem]">
                 <IconCheck className="mt-1 shrink-0 text-signal-ink" />
@@ -435,7 +430,7 @@ function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; o
             <li className="flex items-start gap-2.5 text-[0.9375rem]">
               <IconCheck className="mt-1 shrink-0 text-signal-ink" />
               <span className="grid min-w-0 gap-1.5">
-                <span>Send only to these saved destinations:</span>
+                <span>Only to:</span>
                 {review.review.recipients.map((r) => (
                   <span key={r.address} className="grid gap-0.5">
                     <span className="text-sm font-medium">{r.label}</span>
@@ -449,8 +444,7 @@ function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; o
         <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4 text-sm text-ink-2">
           <IconShield className="mt-0.5 shrink-0 text-lg text-slate" />
           <p>
-            Your wallet provider enforces these limits, and only you can change them: Auctra can&apos;t edit them on its own. You can revoke this
-            permission at any time in Settings, and every automation stops.
+            Only you can change these. Revoke anytime in Settings.
           </p>
         </div>
         {error && (
@@ -485,7 +479,7 @@ function DoneStep({ me }: { me: Me }) {
       </span>
       <h1 className="mt-4 text-h1">You&apos;re set up</h1>
       <p className="mt-2 text-secondary">
-        Add testnet MON (for network fees) and testnet USDC to your wallet, then go back to Telegram and tell Auctra what you want your money to do.
+        Add USDC and a little MON for fees, then tell Auctra what to do.
       </p>
       {me.wallet && (
         <div className="mt-4 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">

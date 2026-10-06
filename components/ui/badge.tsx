@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
 import { IconAlert, IconCheck, IconClock, IconDot, IconPause, IconSkip, IconX } from "./icons";
 
-type Tone = "neutral" | "success" | "warning" | "danger" | "testnet";
+type Tone = "neutral" | "success" | "warning" | "danger";
 const tones: Record<Tone, string> = {
   neutral: "border-line bg-cloud text-ink-2",
   success: "border-signal-ink/25 bg-signal-soft text-signal-ink",
   warning: "border-amber/50 bg-amber-soft text-amber-ink",
-  danger: "border-danger/30 bg-danger-soft text-danger-ink",
-  testnet: "border-amber/50 bg-amber-soft text-amber-ink"
+  danger: "border-danger/30 bg-danger-soft text-danger-ink"
 };
 
 /** Small label: a pill with an icon and a word. */
@@ -17,14 +16,6 @@ export function Badge({ tone = "neutral", icon, children }: { tone?: Tone; icon?
       {icon && <span className="text-[0.875rem]">{icon}</span>}
       {children}
     </span>
-  );
-}
-
-export function TestnetBadge({ compact }: { compact?: boolean }) {
-  return (
-    <Badge tone="testnet" icon={<IconDot />}>
-      {compact ? "Testnet" : "Monad Testnet"}
-    </Badge>
   );
 }
 

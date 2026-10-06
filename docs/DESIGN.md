@@ -67,7 +67,7 @@ Fluid sizes use `clamp()` so phones don't get oversized headings.
 - `Button` / `ButtonLink`: variants primary, secondary, ghost, danger, danger-ghost, dark and on-dark. They have loading states and are at least 40–48px tall.
 - `Field` (label, hint and error wired with ids), `Input`, `Textarea`, `Select`.
 - `Card` / `CardHeader` / `CardBody`.
-- `Badge`, `TestnetBadge`, `StatusBadge`.
+- `Badge`, `Badge`, `StatusBadge`.
 - `Dialog`: native `<dialog>`; a bottom sheet below 640px. `ConfirmDialog` replaces `window.confirm()`, which Telegram's in-app browser blocks.
 - `Address`: shortened, with copy and explorer link, and the full value in a tooltip and for screen readers.
 - `LoadingState`, `Skeleton`, `Spinner`, `EmptyState`, `ErrorState`, `Notice`.
