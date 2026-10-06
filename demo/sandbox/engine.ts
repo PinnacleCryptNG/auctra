@@ -8,6 +8,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { decodeFunctionData, erc20Abi, getAddress, type Address, type Hex } from "viem";
 import initSql from "../../drizzle/0000_init.sql";
 import pendingSql from "../../drizzle/0001_pending_request.sql";
+import policyFingerprintSql from "../../drizzle/0002_policy_fingerprint.sql";
 import type { Db } from "../../db/client";
 import * as schema from "../../db/schema";
 import { parseIntent, SYSTEM_PROMPT, type Extraction, type IntentModel } from "../../lib/ai/intent-parser";
@@ -24,11 +25,13 @@ import {
 import { activateAutomation, changeAutomationStatus, describeAutomation, listAutomations, prepareAutomation } from "../../lib/services/automations";
 import { archiveDestination, confirmDestination, listDestinations, proposeDestination, type DestinationCategory } from "../../lib/services/destinations";
 import { UserFacingError } from "../../lib/services/errors";
+import { currentPolicyLimits, loadPermissionState } from "../../lib/services/permission";
 import { listExecutions, reconcileExecutions, runDueAutomations, runNow, type ExecutionDeps } from "../../lib/services/executions";
 import { executionMessage } from "../../lib/services/notifications";
 import type { InlineKeyboard, TelegramUpdate } from "../../lib/telegram/api";
 import { handleUpdate, type BotDeps } from "../../lib/telegram/bot";
 import { formatUsdcAmount, MONAD_TESTNET_USDC_ADDRESS, parseUsdcAmount } from "../../lib/usdc";
+import { expectedPolicyFingerprint } from "../../lib/wallet/policy";
 
 export type AccountType = "INDIVIDUAL" | "BUSINESS";
 type SampleFn = ((input: string, options?: Record<string, unknown>) => Promise<{ text: string }>) & {
@@ -276,10 +279,17 @@ async function loadAssets() {
   return assets;
 }
 
+/** Simulated grant: records the permission as verified for the account's current limits. No Privy involved. */
+async function simulateVerifiedGrant(accountId: string, userId: string) {
+  const limits = await currentPolicyLimits(db!, accountId);
+  if (!limits) throw new UserFacingError("NO_DESTINATIONS", "Save at least one destination before granting Auctra permission.");
+  await setSignerStatus(db!, { accountId, userId, status: "GRANTED", privyPolicyId: "sandbox-policy", policyFingerprint: expectedPolicyFingerprint(limits) });
+}
+
 export async function boot(type: AccountType) {
   const { wasm, data } = await loadAssets();
   const client = await PGlite.create({ wasmModule: wasm, fsBundle: data });
-  for (const sql of [initSql, pendingSql]) {
+  for (const sql of [initSql, pendingSql, policyFingerprintSql]) {
     for (const statement of sql.split("--> statement-breakpoint")) if (statement.trim()) await client.exec(statement);
   }
   db = drizzle(client, { schema }) as unknown as Db;
@@ -290,11 +300,11 @@ export async function boot(type: AccountType) {
   const account = await createAccount(db, { userId: user.id, type, businessName: type === "BUSINESS" ? "Acme Labs" : undefined, timezone: TIMEZONE });
   walletAddress = getAddress(type === "BUSINESS" ? "0x7a3f9c21b04de8a5c6f1e2d3b4a5968778899abc" : "0x1c0ffee2541f0b3d9e8a7c6b5a4d3e2f1a0b9c8d");
   await registerWallet(db, { accountId: account.id, userId: user.id, privyWalletId: "sandbox-wallet", address: walletAddress, chainId: 10143 });
-  await setSignerStatus(db, { accountId: account.id, userId: user.id, status: "GRANTED", privyPolicyId: "sandbox-policy" });
   for (const d of SEED[type]) {
     const proposal = await proposeDestination(db, { userId: user.id, accountId: account.id, walletAddress, ...d });
     await confirmDestination(db, { confirmationId: proposal.confirmationId, userId: user.id, accountId: account.id });
   }
+  await simulateVerifiedGrant(account.id, user.id);
   balances.set(walletAddress, parseUsdcAmount(type === "BUSINESS" ? "1342.5" : "500"));
 
   update({ accountType: type, now: new Date(), chat: [], unread: 0, busy: false });
@@ -354,7 +364,13 @@ export async function handleApi(method: string, pathname: string, body: unknown)
           linked: true,
           user: { timezone: ctx.user.timezone },
           account: { id: ctx.account.id, type: ctx.account.type, businessName: ctx.account.businessName },
-          wallet: { address: ctx.wallet.address, chainId: ctx.wallet.chainId, signerStatus: ctx.wallet.signerStatus, balanceFloor: ctx.wallet.balanceFloor },
+          wallet: {
+            address: ctx.wallet.address,
+            chainId: ctx.wallet.chainId,
+            signerStatus: ctx.wallet.signerStatus,
+            permission: await loadPermissionState(db, ctx.wallet),
+            balanceFloor: ctx.wallet.balanceFloor
+          },
           limits: { maxTransferUsdc: AuctraConfig.maxTransferUsdc, dailyCapUsdc: AuctraConfig.dailyCapUsdc }
         });
       case "GET /api/balance":
@@ -428,12 +444,33 @@ export async function handleApi(method: string, pathname: string, body: unknown)
       case "PATCH /api/settings":
         await updateSettings(db, { userId: ctx.user.id, accountId: ctx.account.id, ...(input as { timezone?: string; balanceFloor?: string | null }) });
         return json({ ok: true });
-      case "GET /api/onboarding/signer":
-        return json({ address: ctx.wallet.address, signerId: "sandbox-signer", policyId: "sandbox-policy", status: ctx.wallet.signerStatus });
+      case "GET /api/onboarding/signer": {
+        const destinations = await listDestinations(db, ctx.account.id);
+        if (destinations.length === 0) return fail("NO_DESTINATIONS", "Save at least one destination before granting Auctra permission.");
+        return json({
+          address: ctx.wallet.address,
+          signerId: "sandbox-signer",
+          policyId: "sandbox-policy",
+          permission: await loadPermissionState(db, ctx.wallet),
+          review: {
+            network: "Monad Testnet",
+            chainId: 10143,
+            asset: "USDC",
+            contract: MONAD_TESTNET_USDC_ADDRESS,
+            maxTransferUsdc: AuctraConfig.maxTransferUsdc,
+            dailyCapUsdc: AuctraConfig.dailyCapUsdc,
+            recipients: destinations.map((d) => ({ label: d.label, address: d.address }))
+          }
+        });
+      }
       case "POST /api/onboarding/signer": {
-        const status = input.action === "granted" ? "GRANTED" : "REVOKED";
-        await setSignerStatus(db, { accountId: ctx.account.id, userId: ctx.user.id, status, ...(status === "GRANTED" ? { privyPolicyId: "sandbox-policy" } : {}) });
-        return json({ status });
+        // Simulated: there is no Privy here, so the grant is recorded as if verified.
+        if (input.action === "granted") {
+          await simulateVerifiedGrant(ctx.account.id, ctx.user.id);
+          return json({ permission: "VERIFIED" });
+        }
+        await setSignerStatus(db, { accountId: ctx.account.id, userId: ctx.user.id, status: "REVOKED" });
+        return json({ permission: "REVOKED" });
       }
       default:
         return fail("NOT_FOUND", "Not available in the sandbox.", 404);

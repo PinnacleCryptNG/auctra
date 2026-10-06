@@ -7,7 +7,8 @@ import { setSignerStatus, updateSettings } from "../lib/services/accounts";
 import { activateAutomation, changeAutomationStatus, prepareAutomation } from "../lib/services/automations";
 import { reconcileExecutions, runDueAutomations, runNow, type ExecutionDeps } from "../lib/services/executions";
 import { createTestDb } from "./helpers/db";
-import { createFixture } from "./helpers/fixtures";
+import { createFixture, VENDOR_ADDRESS } from "./helpers/fixtures";
+import { confirmDestination, proposeDestination } from "../lib/services/destinations";
 
 const CREATED = new Date("2026-10-05T10:00:00Z"); // Monday
 const FRIDAY_RUN = new Date("2026-10-09T17:00:00Z"); // Friday 18:00 Lagos
@@ -188,6 +189,32 @@ describe("preflight (fail closed)", () => {
     const deps = makeDeps();
     const execution = await runNow(db, deps, { accountId: ctx.account!.id, automationId: automation.id, requestId: "request-perm-1", userId: ctx.user.id }, CREATED);
     expect(execution).toMatchObject({ status: "REJECTED", errorCode: "MISSING_PERMISSION" });
+    expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the verified permission is stale (destinations changed since approval)", async () => {
+    const { ctx } = await setup();
+    const proposal = await proposeDestination(db, {
+      userId: ctx.user.id,
+      accountId: ctx.account!.id,
+      walletAddress: ctx.wallet!.address,
+      label: "Vendor",
+      address: VENDOR_ADDRESS,
+      category: "VENDOR"
+    });
+    await confirmDestination(db, { confirmationId: proposal.confirmationId, userId: ctx.user.id, accountId: ctx.account!.id });
+    const deps = makeDeps();
+    const { execution } = await runWith(deps);
+    expect(execution).toMatchObject({ status: "REJECTED", errorCode: "PERMISSION_STALE" });
+    expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects a legacy grant that has no verified policy fingerprint", async () => {
+    const { ctx } = await setup();
+    await db.update(wallets).set({ policyFingerprint: null }).where(eq(wallets.accountId, ctx.account!.id));
+    const deps = makeDeps();
+    const { execution } = await runWith(deps);
+    expect(execution).toMatchObject({ status: "REJECTED", errorCode: "PERMISSION_STALE" });
     expect(deps.signer.sendTransaction).not.toHaveBeenCalled();
   });
 

@@ -11,6 +11,7 @@ import { activateAutomation, changeAutomationStatus, describeAutomation, listAut
 import { confirmDestination, describeDestination, DESTINATION_CATEGORIES, listDestinations, proposeDestination, type DestinationCategory } from "../services/destinations";
 import { UserFacingError } from "../services/errors";
 import { listExecutions, runNow, type ExecutionDeps } from "../services/executions";
+import { loadPermissionState } from "../services/permission";
 import type { InlineKeyboard, TelegramClient, TelegramUpdate } from "./api";
 
 // PRD §11. Telegram is the primary surface: natural language first, commands
@@ -271,7 +272,10 @@ async function handleRequest(deps: BotDeps, chatId: string, ctx: AccountContext 
         await telegram.sendMessage(chatId, `${prepared.address} isn't a saved destination. Save it first, then ask again:\n/destinations add ${prepared.address} <name>`);
         return;
       }
-      const warning = ctx.wallet.signerStatus !== "GRANTED" ? "\n\nNote: Auctra can't send yet. Grant permission in the dashboard under Settings." : "";
+      const warning =
+        (await loadPermissionState(db, ctx.wallet)) !== "VERIFIED"
+          ? "\n\nNote: Auctra can't send yet. Approve its permission in the dashboard under Settings."
+          : "";
       await telegram.sendMessage(chatId, prepared.summary + warning, {
         inline_keyboard: [[{ text: "Confirm", callback_data: `ca:${prepared.confirmationId}` }, { text: "Cancel", callback_data: "xx:" }]]
       });
@@ -308,7 +312,11 @@ async function handleCallback(deps: BotDeps, callback: NonNullable<TelegramUpdat
       case "cd": {
         const destination = await confirmDestination(db, { confirmationId: id, userId: ctx.user.id, accountId: ctx.account.id });
         await deps.onDestinationsChanged(ctx.account.id);
-        return reply(`Saved ${describeDestination(destination)}.`);
+        const stale = ctx.wallet && (await loadPermissionState(db, ctx.wallet)) === "STALE";
+        return reply(
+          `Saved ${describeDestination(destination)}.` +
+            (stale ? "\n\nYour destinations changed, so Auctra won't send until you approve its updated permission in the dashboard." : "")
+        );
       }
       case "bf": {
         if (!usdcAmountString.safeParse(id).success) return reply("That button has expired.");

@@ -9,6 +9,7 @@ import { parseUsdcAmount } from "../usdc";
 import { ExecutionRejectedError, executeUsdcTransfer, type WalletSigner } from "../wallet/executor";
 import { recordAudit } from "./audit";
 import { UserFacingError } from "./errors";
+import { loadPermissionState } from "./permission";
 
 // PRD §10: reserve → preflight → submit → confirm, with a unique execution key.
 // Nothing here ever re-sends a transfer whose outcome is unknown.
@@ -155,6 +156,10 @@ async function preflight(db: Db, deps: ExecutionDeps, loaded: Loaded, execution:
   if (wallet.chainId !== MONAD_TESTNET_CHAIN_ID) return reject("WRONG_CHAIN", "Wallet is not on Monad Testnet.");
   if (wallet.status !== "ACTIVE" || wallet.signerStatus !== "GRANTED") {
     return reject("MISSING_PERMISSION", "Auctra no longer has permission to send from this wallet.");
+  }
+  // A grant verified for different limits (destinations changed since) is not a grant.
+  if ((await loadPermissionState(db, wallet)) !== "VERIFIED") {
+    return reject("PERMISSION_STALE", "Your saved destinations changed. Review and approve Auctra's permission again.");
   }
 
   const units = parseUsdcAmount(automation.amount);

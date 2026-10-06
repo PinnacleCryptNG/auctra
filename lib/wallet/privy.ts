@@ -1,12 +1,17 @@
 import { PrivyClient } from "@privy-io/node";
-import { erc20Abi, type Address, type Hex } from "viem";
+import type { Hex } from "viem";
 import { ConfigurationError } from "../config";
 import { MONAD_TESTNET_CAIP2, MONAD_TESTNET_CHAIN_ID, assertMonadTestnet } from "../network";
-import { MONAD_TESTNET_USDC_ADDRESS } from "../usdc";
 import type { UnsignedContractCall, WalletSigner } from "./executor";
+import { assertUsdcTransferCall } from "./policy";
 
-// Privy-backed WalletSigner. The authorization key is Auctra's app-level P-256
-// signer key (a session signer on user wallets), never a user wallet key.
+// Privy-backed WalletSigner.
+//
+// PRIVY_AUTHORIZATION_PRIVATE_KEY is Auctra's app-level P-256 *authorization*
+// key. It signs Auctra's API requests to Privy (the privy-authorization-signature
+// header); it is not a blockchain key and cannot sign a transaction by itself.
+// Its public key is registered in Privy as a key quorum, whose ID is
+// PRIVY_SIGNER_ID; the user adds that quorum to their wallet as a session signer.
 
 /** Raised when required Privy settings are missing. Carries variable NAMES only, never values. */
 export class PrivyNotConfiguredError extends ConfigurationError {
@@ -52,6 +57,9 @@ export function createPrivySigner(config: PrivyConfig, client = createPrivyClien
   return {
     async sendTransaction(walletId: string, call: UnsignedContractCall, idempotencyKey: string) {
       assertMonadTestnet(call.chainId);
+      // Same invariants as the Privy policy, checked before anything leaves Auctra:
+      // chain 10143, the USDC contract, transfer(address,uint256) only, value 0.
+      assertUsdcTransferCall({ ...call, value: BigInt(0) });
 
       const response = await client.wallets().ethereum().sendTransaction(walletId, {
         caip2: MONAD_TESTNET_CAIP2,
@@ -68,68 +76,5 @@ export function createPrivySigner(config: PrivyConfig, client = createPrivyClien
 
       return { hash: response.hash as Hex };
     }
-  };
-}
-
-/**
- * Privy Policy Engine rules: the second, provider-side scope boundary. Allows only
- * eth_sendTransaction on Monad Testnet, to the USDC contract, calling
- * transfer(recipient, amount) with an allowlisted recipient and capped amount.
- * Anything else is denied by Privy even if Auctra's own validation has a bug.
- */
-export function buildUsdcTransferPolicy({
-  name,
-  destinations,
-  maxUnits
-}: {
-  name: string;
-  destinations: Address[];
-  maxUnits: bigint;
-}) {
-  if (destinations.length === 0) {
-    throw new Error("A USDC transfer policy needs at least one allowlisted destination.");
-  }
-
-  const transferAbi = erc20Abi.filter((item) => item.type === "function" && item.name === "transfer");
-
-  return {
-    version: "1.0" as const,
-    name,
-    chain_type: "ethereum" as const,
-    rules: [
-      {
-        name: "Allow capped USDC transfers to allowlisted destinations on Monad Testnet",
-        method: "eth_sendTransaction" as const,
-        action: "ALLOW" as const,
-        conditions: [
-          {
-            field_source: "ethereum_transaction" as const,
-            field: "chain_id" as const,
-            operator: "eq" as const,
-            value: String(MONAD_TESTNET_CHAIN_ID)
-          },
-          {
-            field_source: "ethereum_transaction" as const,
-            field: "to" as const,
-            operator: "eq" as const,
-            value: MONAD_TESTNET_USDC_ADDRESS
-          },
-          {
-            field_source: "ethereum_calldata" as const,
-            field: "transfer.recipient",
-            abi: transferAbi,
-            operator: "in" as const,
-            value: destinations
-          },
-          {
-            field_source: "ethereum_calldata" as const,
-            field: "transfer.amount",
-            abi: transferAbi,
-            operator: "lte" as const,
-            value: maxUnits.toString()
-          }
-        ]
-      }
-    ]
   };
 }

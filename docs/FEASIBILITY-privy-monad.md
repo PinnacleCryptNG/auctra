@@ -1,6 +1,6 @@
 # Feasibility: Privy delegated USDC transfers on Monad Testnet
 
-Status: research only. No execution code was written for this report. `docs/PRD.md` is unchanged.
+Status: research report (sections 0–11), plus the authorization correction that followed it (sections 12–14). No production transfer has been executed. `docs/PRD.md` is unchanged.
 
 **Question:** can Auctra safely give itself permission to make narrowly scoped USDC transfers from a Privy embedded wallet on Monad Testnet (chain 10143), without ever holding the user's private key?
 
@@ -151,7 +151,7 @@ Steps 3–10 already exist in the MVP code and are tested against a **simulated*
 
 No STOP condition is triggered. But two findings are real:
 
-1. **Policy ownership (design flaw in the current code and PRD):**
+1. **Policy ownership (design flaw in the code at the time and the PRD; corrected in §12):**
    - `syncTransferPolicy` creates the policy with `owner_id = PRIVY_SIGNER_ID`, so the policy is owned by the same key that executes. Auctra can therefore rewrite its own limits (destinations, cap, chain) without the user.
    - Whoever holds `PRIVY_AUTHORIZATION_PRIVATE_KEY` could rewrite the policy and then drain the wallet. PRD §26 claims the policy "limits the damage" of a key leak; that is false as built.
    - **Fix:** make the policy **owned by the user** (`owner: { user_id }`, per `PolicyCreateParams.owner`), so every policy change needs the user's authorization. In the browser, the user signs the update (`useAuthorizationSignature`, or the user JWT in `authorization_context.user_jwts`).
@@ -207,7 +207,7 @@ The verdict is GO, conditional on the live spike in step 1. Every step is a gate
    - (g) with a user-owned policy, `policies().update` signed only by the server key is refused;
    - (h) on-chain `symbol`/`decimals` of `0x534b…43A3` return `USDC` / `6`.
    - Extend the existing `npm run test:integration` suite for this; it skips without credentials.
-2. Switch policy ownership to the user. Add `value = 0`, DENY export rules and the user-signed update flow for destination changes (web).
+2. ~~Switch policy ownership to the user. Add `value = 0`, DENY export rules and the user-signed update flow for destination changes (web).~~ **Done in §12**, with one change: instead of a user-signed policy *update*, a destination change creates a new user-owned policy that the user approves.
 3. Before each execution, re-check `additional_signers` server-side.
 4. Run the existing executor against real Privy through the integration suite: Run Now first, then cron.
 5. Update PRD §7 / §17 / §26 / §29 per §10.D, with user approval, since the PRD is frozen.
@@ -215,3 +215,131 @@ The verdict is GO, conditional on the live spike in step 1. Every step is a gate
 **If step 1(a) fails** (Monad Testnet unsupported for server `eth_sendTransaction`), the smallest change that keeps the thesis is a **Privy server wallet per account** (created by the server with `wallets().create`, owned by a user key quorum and governed by the same policy). The user funds it from their embedded wallet. Only if Privy cannot sign for 10143 at all does the wallet provider decision (frozen) need revisiting; Auctra must not substitute its own key management.
 
 GO — the proposed Auctra execution model is technically feasible.
+
+
+## 12. Correction: user-owned policy (implemented)
+
+The flaw in §9.1 is fixed in code. Nothing in this section has run against real Privy yet (see §14).
+
+### 12.1 Who controls what
+
+| Thing | Owner / holder | What it can do |
+|---|---|---|
+| Embedded wallet | The user (Privy user ID) | Only the owner can add or remove signers (`addSigners` / `removeSigners` in the browser) |
+| Spending policy | **The user**: created with `owner: { user_id }` (`PolicyCreateParams.owner`, `OwnerInputUser`, from the SDK) | Changing or deleting it needs the owner's authorization signature. Auctra's key alone cannot do it. |
+| `PRIVY_AUTHORIZATION_PRIVATE_KEY` | Auctra server env | Signs Auctra's API requests to Privy (the `privy-authorization-signature` header, P-256 over the canonical request; `lib/authorization.js` in the SDK). It is **not** a blockchain key. |
+| `PRIVY_SIGNER_ID` | Privy (a key quorum holding the public half of that key) | Added to the wallet by the user as a session signer, bound to one override policy. **It is not the policy owner.** |
+
+Auctra never calls `policies().update`, `updateRule` or `delete`. It also never passes a user's JWT in `authorization_context.user_jwts`, which would let the server mint a user signing key.
+
+### 12.2 Lifecycle
+
+`SIGNED OUT → ACCOUNT NEEDED → WALLET READY → PERMISSION NEEDED → USER REVIEWS → USER APPROVES → PERMISSION VERIFIED → READY`
+
+| Step | Who | Code |
+|---|---|---|
+| Review | The server creates a **new** user-owned policy for the account's current limits, then returns the policy ID plus the exact limits (chain, contract, cap, each recipient's full address). The request uses an idempotency key derived from the wallet and the limits' fingerprint. | `GET /api/onboarding/signer`, `createUserOwnedTransferPolicy` |
+| Approve | Browser: `removeSigners` (only if a stale grant exists), then `addSigners({ address, signers: [{ signerId, policyIds: [policyId] }] })` | `app/onboarding/page.tsx` |
+| Verify | The server reads `wallets().get()` and `policies().get()` from Privy, then runs `verifyWalletPermission`. Nothing the browser says is trusted. | `POST /api/onboarding/signer`, `lib/wallet/policy.ts` |
+| Record | Only on success: `signer_status=GRANTED`, `privy_policy_id`, `policy_fingerprint` | `setSignerStatus` |
+| Ready | `permissionState()` returns `VERIFIED` only if the stored fingerprint equals the fingerprint of the account's **current** limits | `lib/services/permission.ts` |
+
+`verifyWalletPermission` refuses each of the following:
+- the wallet ID or address differs;
+- the wallet is imported or archived;
+- Auctra's signer is missing, listed twice, or not bound to exactly that one policy;
+- the policy is owned by nobody or by `PRIVY_SIGNER_ID`;
+- the rules differ from the expected set in any way (an extra ALLOW rule, a different recipient, cap or ABI).
+
+Permission states:
+- `NOT_GRANTED` and `REVOKED` come straight from what was recorded.
+- `STALE` means GRANTED, but the limits changed after verification (a destination was added or removed), or the grant has no fingerprint (any grant recorded before this change).
+- Only `VERIFIED` is READY. Execution preflight rejects a `STALE` grant with `PERMISSION_STALE`, and a missing or revoked one with `MISSING_PERMISSION`.
+
+Changing destinations never edits a policy. While a grant is stale, the old Privy policy may still allow a removed recipient, but Auctra executes nothing at all until the user approves the new policy.
+
+### 12.3 Policy contents (`buildTransferPolicyRules`)
+
+Every condition below uses only fields and operators that appear in the installed SDK's `policies.d.ts`. Field naming (`transfer.recipient`) and decimal or hex value formats follow Privy's examples (DOC).
+
+| Rule | Method | Action | Conditions |
+|---|---|---|---|
+| Capped USDC transfer | `eth_sendTransaction` | ALLOW | `chain_id eq 10143`; `to eq 0x534b2f3A21130d7a60830c2Df862319e593943A3`; `value lte 0`; calldata `transfer.recipient in [saved]`; calldata `transfer.amount lte cap`. Both calldata conditions are decoded with the `transfer(address,uint256)` ABI only. |
+| No native value | `eth_sendTransaction` | DENY | `value gt 0` |
+| No over-cap transfer | `eth_sendTransaction` | DENY | calldata `transfer.amount gt cap` |
+| No other signing or export | `eth_signTransaction`, `eth_signUserOperation`, `eth_signTypedData_v4`, `personal_sign`, `eth_sign7702Authorization`, `wallet_sendCalls`, `exportPrivateKey`, `exportSeedPhrase` | DENY | none (always matches) |
+
+Some limits cannot be written as an explicit DENY, because the operator set has no negation (`neq` / `not in`):
+- "`to` is not USDC";
+- "recipient not allowlisted";
+- "chain is not 10143";
+- "selector is not `transfer`".
+
+Those cases rely on there being no matching ALLOW rule. **We do not assume unmatched requests are denied.** Live steps H, J and K (§13) test exactly those cases, and a pass is required before any further execution work. If Privy turns out to allow unmatched requests, the result is NO-GO for this policy shape.
+
+Auctra also mirrors the policy itself: `assertUsdcTransferCall` runs inside `createPrivySigner` before any request leaves Auctra. It checks chain 10143, the USDC contract, value 0, the exact `transfer(address,uint256)` encoding, and, when given them, the allowlist and cap.
+
+### 12.4 What remains unverified
+
+- Privy accepts the policy shape: DENY rules with empty `conditions`, `ethereum_calldata` fields named `transfer.recipient`, and `value lte "0"`.
+- How Privy reports `owner_id` for a user-owned policy. Verification requires a non-null value that differs from `PRIVY_SIGNER_ID`; if Privy returns null, verification fails closed and the code must be adjusted.
+- That an `addSigners` session signer cannot update the wallet or the user-owned policy.
+- That unmatched requests are denied (steps H, J, K).
+- That `eth_sendTransaction` works on `eip155:10143`, the USDC contract's identity on-chain, and idempotency behaviour (steps A–G, L).
+- That revocation is enforced (steps M, N).
+- That Privy's create idempotency returns the same policy for the same key.
+- That `addSigners` on a wallet which already has Auctra's signer behaves as expected. The UI removes signers first for a stale grant.
+
+## 13. Live spike: prerequisites and procedure
+
+Test file: `tests/integration/monad-usdc-transfer.integration.test.ts`. It runs via `npm run test:integration`, which loads `.env.local`. Each step skips cleanly when its inputs are missing and names (never prints) the missing variables. No step simulates success.
+
+**Prerequisites**
+1. **Privy app:**
+   - email or other login enabled;
+   - embedded EVM wallets enabled;
+   - `NEXT_PUBLIC_PRIVY_APP_ID` and `PRIVY_APP_SECRET`.
+2. **Authorization key:**
+   - run `npm run spike -- keygen` and put the private key in `.env.local` as `PRIVY_AUTHORIZATION_PRIVATE_KEY`;
+   - register the public key in the Privy dashboard as a key quorum;
+   - set its ID as `PRIVY_SIGNER_ID`.
+3. **Network:**
+   - outbound access to `api.privy.io`, `auth.privy.io` and the Monad RPC;
+   - `MONAD_RPC_URL`, `AUCTRA_NETWORK=testnet`, `MONAD_CHAIN_ID=10143`;
+   - `DATABASE_URL` for the app steps.
+4. **A spike user**, signed in to the app, whose embedded wallet is registered:
+   - `SPIKE_PRIVY_WALLET_ID` and `SPIKE_WALLET_ADDRESS`;
+   - funded with testnet MON (gas) and at least 2 × `SPIKE_AMOUNT_USDC` of testnet USDC (default 0.01).
+5. **Step B (manual):** in the app, save `SPIKE_RECIPIENT` as the only destination and approve Auctra's permission. Set `SPIKE_POLICY_ID` to the policy ID that the approval used (returned by `GET /api/onboarding/signer`), and `SPIKE_MAX_USDC` to the app's cap (100) unless it was changed.
+6. Set `AUCTRA_LIVE_SPIKE=1`. This is the explicit opt-in to move testnet funds.
+
+**Procedure**
+
+| Step | Check | How |
+|---|---|---|
+| 9 / pre | USDC contract: `symbol()=="USDC"`, `decimals()==6`, has code, `transfer` simulates to `true` | read-only RPC; also gates every later step |
+| A | wallet funded (MON > 0, USDC ≥ 2 × amount) | RPC |
+| B | grant | **manual** in the app (see above) |
+| C | Privy records verify | `verifyWalletPermission` on live `wallets().get` / `policies().get` |
+| D–G | one transfer through `createPrivySigner`, receipt `success`, exactly one USDC `Transfer(wallet → recipient, amount)` log, recipient balance increased by exactly the amount | Privy + RPC; hash and explorer link written to `.spike/last-run.json` (git-ignored) |
+| H | non-allowlisted recipient refused | raw Privy call that **bypasses** Auctra's guard; expects a 4xx `APIError` and an unchanged nonce |
+| I | amount cap + 1 refused | same |
+| J | native MON value refused | same |
+| K | `approve()` refused | same |
+| L | same idempotency key twice: the second call replays the same hash or is refused, and the recipient balance moves only once | Privy + RPC |
+| M | revoke | **manual**: Settings → Revoke permission |
+| N | rerun with `SPIKE_PHASE=revoked`: no Auctra signer on the wallet, and a valid transfer is refused | Privy + RPC |
+
+**Pass criteria for the first real transfer:** the pre-check plus A, C, D–G, H, I, J, K and L all pass in one run, then N passes after M. Anything else is a NO-GO for building execution.
+
+## 14. Status
+
+- **Implemented and unit-tested (mocks only):**
+  - the user-owned policy;
+  - explicit DENY rules;
+  - the server-side verification;
+  - stale detection;
+  - Auctra's call guard;
+  - the lifecycle UI.
+- **Not run against real Privy or Monad:** everything in §12.4. This environment has no Privy credentials, and its egress blocks `api.privy.io` and `testnet-rpc.monad.xyz`. An opt-in run here fails with "Host not in allowlist", as it should, rather than passing.
+- **The USDC contract** `0x534b2f3A21130d7a60830c2Df862319e593943A3` stays **UNVERIFIED** until the pre-check passes live.

@@ -154,7 +154,7 @@ function Onboarding() {
     );
   }
 
-  const step = !me?.account ? 0 : !me.wallet ? 1 : destinations.length === 0 ? 2 : me.wallet.signerStatus !== "GRANTED" ? 3 : 4;
+  const step = !me?.account ? 0 : !me.wallet ? 1 : destinations.length === 0 ? 2 : me.wallet.permission !== "VERIFIED" ? 3 : 4;
 
   return (
     <Shell step={me?.linked && step < 4 ? step : null}>
@@ -348,19 +348,54 @@ function WalletStep({ onDone }: { onDone: () => void }) {
   );
 }
 
-function PermissionStep({ me, destinations, onDone }: { me: Me; destinations: Destination[]; onDone: () => void }) {
+type PermissionReview = {
+  address: string;
+  signerId: string;
+  policyId: string;
+  permission: NonNullable<Me["wallet"]>["permission"];
+  review: {
+    network: string;
+    chainId: number;
+    asset: string;
+    contract: string;
+    maxTransferUsdc: string;
+    dailyCapUsdc: string;
+    recipients: Array<{ label: string; address: string }>;
+  };
+};
+
+// Lifecycle: review the exact limits → approve in the wallet (Privy addSigners) →
+// the server re-reads the wallet and policy from Privy and only then records it.
+function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; onDone: () => void }) {
   const { request } = useApi();
-  const { addSigners } = useSigners();
+  const { addSigners, removeSigners } = useSigners();
+  const [review, setReview] = useState<PermissionReview | null>(null);
   const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function grant() {
+  const loadReview = useCallback(async () => {
+    setError(null);
+    try {
+      setReview(await request<PermissionReview>("/api/onboarding/signer"));
+    } catch (e) {
+      setError(friendlyError(e, "Auctra's limits couldn't be loaded"));
+    }
+  }, [request]);
+
+  useEffect(() => {
+    loadReview();
+  }, [loadReview]);
+
+  async function approve() {
+    if (!review) return;
     setBusy(true);
     setError(null);
     try {
-      const signer = await request<{ address: string; signerId: string; policyId: string }>("/api/onboarding/signer");
-      await addSigners({ address: signer.address, signers: [{ signerId: signer.signerId, policyIds: [signer.policyId] }] });
-      await request("/api/onboarding/signer", { method: "POST", body: { action: "granted" } });
+      // A stale grant is still attached with the old limits: remove it first so
+      // the wallet ends up with exactly one Auctra signer, bound to the new policy.
+      if (me.wallet?.permission === "STALE") await removeSigners({ address: review.address });
+      await addSigners({ address: review.address, signers: [{ signerId: review.signerId, policyIds: [review.policyId] }] });
+      await request("/api/onboarding/signer", { method: "POST", body: { action: "granted", policyId: review.policyId } });
       onDone();
     } catch (e) {
       setError(friendlyError(e, "Permission wasn't granted"));
@@ -369,35 +404,73 @@ function PermissionStep({ me, destinations, onDone }: { me: Me; destinations: De
     }
   }
 
-  const limits = [
-    "Send USDC only, on Monad Testnet only",
-    `Send only to your saved destinations (${destinations.map((d) => d.label).join(", ")})`,
-    `At most ${formatUsdc(me.limits.maxTransferUsdc)} USDC per transfer and ${formatUsdc(me.limits.dailyCapUsdc)} USDC per 24 hours`,
-    "Only run automations you've confirmed"
-  ];
+  const stale = me.wallet?.permission === "STALE";
 
   return (
     <StepCard
       index={3}
-      title="Allow Auctra to send scheduled transfers"
-      description="You're giving Auctra limited permission on your wallet so it can run the automations you confirm."
+      title={stale ? "Review Auctra's permission again" : "Allow Auctra to send scheduled transfers"}
+      description={
+        stale
+          ? "Your saved destinations changed, so Auctra's limits changed too. Nothing is sent until you approve them."
+          : "You're giving Auctra limited permission on your wallet so it can run the automations you confirm."
+      }
     >
       <div className="grid gap-5">
-        <ul className="grid gap-2.5">
-          {limits.map((item) => (
-            <li key={item} className="flex items-start gap-2.5 text-[0.9375rem]">
+        {!review && !error && <LoadingState label="Preparing Auctra's limits…" rows={2} />}
+        {review && (
+          <ul className="grid gap-2.5">
+            {[
+              `Send ${review.review.asset} only, on ${review.review.network} (chain ${review.review.chainId}) only`,
+              `At most ${formatUsdc(review.review.maxTransferUsdc)} USDC per transfer`,
+              `At most ${formatUsdc(review.review.dailyCapUsdc)} USDC per 24 hours (checked by Auctra)`,
+              "No other tokens, contracts, signatures or MON transfers",
+              "Only run automations you've confirmed"
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5 text-[0.9375rem]">
+                <IconCheck className="mt-1 shrink-0 text-signal-ink" />
+                <span className="min-w-0">{item}</span>
+              </li>
+            ))}
+            <li className="flex items-start gap-2.5 text-[0.9375rem]">
               <IconCheck className="mt-1 shrink-0 text-signal-ink" />
-              <span className="min-w-0">{item}</span>
+              <span className="grid min-w-0 gap-1.5">
+                <span>Send only to these saved destinations:</span>
+                {review.review.recipients.map((r) => (
+                  <span key={r.address} className="grid gap-0.5">
+                    <span className="text-sm font-medium">{r.label}</span>
+                    <Address value={r.address} label={`${r.label} address`} full />
+                  </span>
+                ))}
+              </span>
             </li>
-          ))}
-        </ul>
+          </ul>
+        )}
         <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4 text-sm text-ink-2">
           <IconShield className="mt-0.5 shrink-0 text-lg text-slate" />
-          <p>Your wallet provider enforces these limits too, not just Auctra. You can revoke this permission at any time in Settings, and every automation stops.</p>
+          <p>
+            Your wallet provider enforces these limits, and only you can change them: Auctra can&apos;t edit them on its own. You can revoke this
+            permission at any time in Settings, and every automation stops.
+          </p>
         </div>
-        {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
-        <Button size="lg" onClick={grant} loading={busy} loadingLabel="Waiting for your wallet…" className="w-full sm:w-auto sm:justify-self-start">
-          Grant permission
+        {error && (
+          <Notice
+            tone="danger"
+            title={error.title}
+            action={!review ? <Button size="sm" variant="secondary" onClick={loadReview}>Try again</Button> : undefined}
+          >
+            {error.description}
+          </Notice>
+        )}
+        <Button
+          size="lg"
+          onClick={approve}
+          disabled={!review}
+          loading={busy}
+          loadingLabel="Waiting for your wallet…"
+          className="w-full sm:w-auto sm:justify-self-start"
+        >
+          {stale ? "Approve new limits" : "Approve permission"}
         </Button>
       </div>
     </StepCard>

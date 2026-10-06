@@ -1,21 +1,16 @@
 import "server-only";
 import { APIError, type PrivyClient } from "@privy-io/node";
-import { eq } from "drizzle-orm";
 import type { Address, Hex } from "viem";
 import { getDb, type Db } from "../../db/client";
-import { wallets } from "../../db/schema";
 import { createClaudeIntentModel } from "../ai/intent-parser";
 import { getMonadPublicClient } from "../chain/monad";
-import { AuctraConfig } from "../config";
-import { listDestinations } from "../services/destinations";
-import { UserFacingError } from "../services/errors";
 import type { ExecutionDeps } from "../services/executions";
 import { createTelegramNotifier } from "../services/notifications";
 import { createTelegramClient } from "../telegram/api";
 import type { BotDeps } from "../telegram/bot";
-import { parseUsdcAmount, readUsdcBalance } from "../usdc";
+import { readUsdcBalance } from "../usdc";
+import { buildUserOwnedTransferPolicy, expectedPolicyFingerprint, verifyWalletPermission, type PermissionCheck, type TransferPolicyLimits } from "../wallet/policy";
 import {
-  buildUsdcTransferPolicy,
   createPrivyClient,
   createPrivySigner,
   privyAppConfigFromEnv,
@@ -49,7 +44,10 @@ export function getPrivy() {
   return privy;
 }
 
-/** The key quorum ID of Auctra's authorization key (session signer + policy owner). */
+/**
+ * The key quorum ID that contains Auctra's authorization public key. The user adds
+ * it to their wallet as a session signer. It is NOT the owner of the policy.
+ */
 export function getSignerId() {
   const id = process.env.PRIVY_SIGNER_ID;
   if (!id) throw new PrivyNotConfiguredError(["PRIVY_SIGNER_ID"]);
@@ -85,34 +83,43 @@ export function getExecutionDeps(db: Db = getDb()): ExecutionDeps {
 }
 
 /**
- * Creates or updates the account's Privy policy so it allows USDC transfers
- * only to its saved destinations, capped per transfer (PRD §7.3 Layer 2).
+ * Creates a NEW Privy policy, owned by the user, that allows only capped USDC
+ * transfers to the account's saved destinations on Monad Testnet. Auctra never
+ * updates an existing policy: its server key must not be able to change the
+ * user's limits. The user attaches the returned policy with `addSigners`, and
+ * the grant is only recorded after verifyWalletPermission() succeeds.
  */
-export async function syncTransferPolicy(db: Db, accountId: string): Promise<string> {
-  const [wallet] = await db.select().from(wallets).where(eq(wallets.accountId, accountId));
-  if (!wallet) throw new UserFacingError("NO_WALLET", "Set up your wallet first.");
+export async function createUserOwnedTransferPolicy(input: { privyUserId: string; privyWalletId: string; limits: TransferPolicyLimits }) {
+  const fingerprint = expectedPolicyFingerprint(input.limits);
+  const policy = await getPrivyClient()
+    .policies()
+    .create({
+      ...buildUserOwnedTransferPolicy({ name: `auctra-${fingerprint.slice(0, 16)}`, privyUserId: input.privyUserId, ...input.limits }),
+      // Same wallet + same limits within Privy's 24h idempotency window -> same policy, not a new one per page view.
+      idempotency_key: `auctra-policy:${input.privyWalletId}:${fingerprint}`
+    });
+  return { policyId: policy.id, fingerprint };
+}
 
-  const destinations = await listDestinations(db, accountId);
-  if (destinations.length === 0) {
-    throw new UserFacingError("NO_DESTINATIONS", "Save at least one destination before granting Auctra permission.");
-  }
-
-  const policy = buildUsdcTransferPolicy({
-    name: `auctra-${accountId}`,
-    destinations: destinations.map((d) => d.address as Address),
-    maxUnits: parseUsdcAmount(AuctraConfig.maxTransferUsdc)
+/** Reads the wallet and policy from Privy and checks them against the account's current limits. */
+export async function verifyPermissionWithPrivy(input: {
+  privyWalletId: string;
+  address: string;
+  policyId: string;
+  limits: TransferPolicyLimits;
+}): Promise<PermissionCheck> {
+  const client = getPrivyClient();
+  const signerId = getSignerId();
+  const wallet = await client.wallets().get(input.privyWalletId);
+  // Only look up a policy the wallet actually binds to Auctra's signer: an ID the
+  // browser sent that isn't on the wallet is refused without fetching anything.
+  const attached = wallet.additional_signers.some((s) => s.signer_id === signerId && s.override_policy_ids?.includes(input.policyId));
+  const policy = attached ? await client.policies().get(input.policyId) : null;
+  return verifyWalletPermission({
+    wallet,
+    policy,
+    expected: { privyWalletId: input.privyWalletId, address: input.address, signerId, policyId: input.policyId, limits: input.limits }
   });
-  const { client, config } = getPrivy();
-  const authorization_context = { authorization_private_keys: [config.authorizationPrivateKey] };
-
-  if (wallet.privyPolicyId) {
-    await client.policies().update(wallet.privyPolicyId, { rules: policy.rules, authorization_context });
-    return wallet.privyPolicyId;
-  }
-
-  const created = await client.policies().create({ ...policy, owner_id: getSignerId() });
-  await db.update(wallets).set({ privyPolicyId: created.id }).where(eq(wallets.id, wallet.id));
-  return created.id;
 }
 
 export function getBotDeps(db: Db = getDb()): BotDeps {
@@ -127,10 +134,8 @@ export function getBotDeps(db: Db = getDb()): BotDeps {
       return { mon, usdc };
     },
     execution: getExecutionDeps(db),
-    onDestinationsChanged: async (accountId) => {
-      // Only an existing policy needs updating; a new one is created when the signer is granted.
-      const [wallet] = await db.select().from(wallets).where(eq(wallets.accountId, accountId));
-      if (wallet?.privyPolicyId) await syncTransferPolicy(db, accountId);
-    }
+    // Changing destinations never touches the Privy policy: the stored permission
+    // becomes STALE (lib/services/permission.ts) until the user approves again.
+    onDestinationsChanged: async () => {}
   };
 }

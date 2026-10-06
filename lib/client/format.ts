@@ -142,6 +142,8 @@ export function executionReason(execution: { status: string; errorCode: string |
       return "This would have gone over the daily limit, so it was skipped.";
     case "MISSING_PERMISSION":
       return "Auctra didn't have permission to send from your wallet.";
+    case "PERMISSION_STALE":
+      return "Your saved destinations changed, so Auctra's permission needs your approval again.";
     case "MISSED_WINDOW":
       return "This run was missed by more than a day, so it was skipped.";
     case "PREFLIGHT_ERROR":

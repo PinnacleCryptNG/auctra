@@ -11,8 +11,10 @@ import {
 
 export const USDC_DECIMALS = 6;
 
-// Circle testnet USDC on Monad Testnet (chain 10143). Verified on-chain by
-// verifyUsdcContract() before any spike transfer; see docs/PRD.md §17.
+// Circle testnet USDC on Monad Testnet (chain 10143), per viem's USDC token list
+// and Circle's docs (docs/FEASIBILITY-privy-monad.md §6). UNVERIFIED on-chain
+// until the live spike reads symbol()/decimals() and simulates transfer();
+// verifyUsdcContract() runs before every spike request that could move funds.
 export const MONAD_TESTNET_USDC_ADDRESS: Address = getAddress(
   "0x534b2f3A21130d7a60830c2Df862319e593943A3"
 );

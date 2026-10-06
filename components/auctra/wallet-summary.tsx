@@ -3,6 +3,7 @@
 import { Address, Badge, ButtonLink, Card, ErrorState, Button, IconShield, IconWallet, Skeleton, TestnetBadge } from "@/components/ui";
 import { friendlyError, type Balance, type Me } from "@/lib/client/api";
 import { formatUsdc } from "@/lib/client/format";
+import { permissionCopy } from "@/lib/client/readiness";
 
 /** Balance first, then the wallet's status in plain words (PRD §12–13). */
 export function WalletSummary({
@@ -18,7 +19,8 @@ export function WalletSummary({
   balanceError: unknown;
   onRetry: () => void;
 }) {
-  const granted = me.wallet?.signerStatus === "GRANTED";
+  const granted = me.wallet?.permission === "VERIFIED";
+  const copy = me.wallet ? permissionCopy(me.wallet.permission) : null;
   return (
     <Card aria-labelledby="balance-heading" className="flex flex-col gap-4">
       <div className="grid gap-1 px-4 pt-4 sm:px-5 sm:pt-5">
@@ -59,11 +61,11 @@ export function WalletSummary({
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-h3">Auctra Wallet</span>
             <Badge tone="success" icon={<IconShield />}>Connected</Badge>
-            {!granted && <Badge tone="warning">Permission needed</Badge>}
+            {!granted && copy && <Badge tone="warning">{copy.badge}</Badge>}
           </span>
           {me.wallet && <Address value={me.wallet.address} label="Wallet address" />}
         </div>
-        {granted ? <TestnetBadge /> : <ButtonLink href="/onboarding" size="sm">Grant permission</ButtonLink>}
+        {granted ? <TestnetBadge /> : <ButtonLink href="/onboarding" size="sm">{copy?.action ?? "Grant permission"}</ButtonLink>}
       </div>
     </Card>
   );

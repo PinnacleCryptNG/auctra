@@ -32,7 +32,7 @@ describe("database schema holds no signing material (unit)", () => {
 
   it("wallets store only Privy wallet ID, address, chain and status metadata", () => {
     expect(Object.values(getTableColumns(schema.wallets)).map((c) => c.name).sort()).toEqual(
-      ["account_id", "address", "balance_floor", "chain_id", "created_at", "id", "privy_policy_id", "privy_wallet_id", "signer_status", "status"].sort()
+      ["account_id", "address", "balance_floor", "chain_id", "created_at", "id", "policy_fingerprint", "privy_policy_id", "privy_wallet_id", "signer_status", "status"].sort()
     );
   });
 });

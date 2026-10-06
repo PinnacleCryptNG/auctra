@@ -111,7 +111,7 @@ describe("sign-in → Auctra user → wallet (unit, real route handlers)", () =>
     expect(row.signerStatus).toBe("NOT_GRANTED");
 
     const body = await (await call(me, "alice-token")).json();
-    expect(body.wallet).toEqual({ address: row.address, chainId: 10143, signerStatus: "NOT_GRANTED", balanceFloor: null });
+    expect(body.wallet).toEqual({ address: row.address, chainId: 10143, signerStatus: "NOT_GRANTED", permission: "NOT_GRANTED", balanceFloor: null });
   });
 
   it("refuses wallets imported from a private key", async () => {

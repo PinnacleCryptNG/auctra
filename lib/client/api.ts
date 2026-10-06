@@ -85,7 +85,14 @@ export type Me = {
   linked: boolean;
   user: { timezone: string } | null;
   account: { id: string; type: "INDIVIDUAL" | "BUSINESS"; businessName: string | null } | null;
-  wallet: { address: string; chainId: number; signerStatus: "NOT_GRANTED" | "GRANTED" | "REVOKED"; balanceFloor: string | null } | null;
+  wallet: {
+    address: string;
+    chainId: number;
+    signerStatus: "NOT_GRANTED" | "GRANTED" | "REVOKED";
+    /** Server-verified permission (lib/services/permission.ts). Only VERIFIED may send. */
+    permission: "NOT_GRANTED" | "REVOKED" | "STALE" | "VERIFIED";
+    balanceFloor: string | null;
+  } | null;
   limits: { maxTransferUsdc: string; dailyCapUsdc: string };
 };
 

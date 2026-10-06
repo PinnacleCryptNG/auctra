@@ -15,6 +15,13 @@
       "when": 1791196735021,
       "tag": "0001_pending_request",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791279446280,
+      "tag": "0002_policy_fingerprint",
+      "breakpoints": true
     }
   ]
 }

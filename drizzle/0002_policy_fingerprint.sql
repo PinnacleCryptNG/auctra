@@ -1,0 +1,1 @@
+ALTER TABLE "wallets" ADD COLUMN "policy_fingerprint" text;

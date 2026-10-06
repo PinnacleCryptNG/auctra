@@ -223,20 +223,24 @@ export async function registerWallet(
 
 export async function setSignerStatus(
   db: Db,
-  input: { accountId: string; userId: string; status: "GRANTED" | "REVOKED"; privyPolicyId?: string }
+  input:
+    | { accountId: string; userId: string; status: "GRANTED"; privyPolicyId: string; policyFingerprint: string }
+    | { accountId: string; userId: string; status: "REVOKED" }
 ) {
-  const [wallet] = await db
-    .update(wallets)
-    .set({ signerStatus: input.status, ...(input.privyPolicyId ? { privyPolicyId: input.privyPolicyId } : {}) })
-    .where(eq(wallets.accountId, input.accountId))
-    .returning();
+  // GRANTED is only recorded after verifyWalletPermission() checked Privy's own
+  // records (app/api/onboarding/signer). REVOKED is always safe to record.
+  const values =
+    input.status === "GRANTED"
+      ? { signerStatus: input.status, privyPolicyId: input.privyPolicyId, policyFingerprint: input.policyFingerprint }
+      : { signerStatus: input.status, policyFingerprint: null };
+  const [wallet] = await db.update(wallets).set(values).where(eq(wallets.accountId, input.accountId)).returning();
   if (!wallet) throw new UserFacingError("NO_WALLET", "Set up your wallet first.");
 
   await recordAudit(db, {
     accountId: input.accountId,
     userId: input.userId,
     eventType: input.status === "GRANTED" ? "SIGNER_GRANTED" : "SIGNER_REVOKED",
-    metadata: { privyPolicyId: input.privyPolicyId }
+    metadata: input.status === "GRANTED" ? { privyPolicyId: input.privyPolicyId, policyFingerprint: input.policyFingerprint } : {}
   });
   return wallet;
 }

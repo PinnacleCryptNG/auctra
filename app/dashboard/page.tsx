@@ -8,6 +8,7 @@ import { Resource } from "@/components/auctra/resource";
 import { WalletSummary } from "@/components/auctra/wallet-summary";
 import { Button, ButtonLink, Card, CardHeader, EmptyState, IconActivity, IconArrowRight, IconPlus, IconRepeat, Notice } from "@/components/ui";
 import { useAuctra } from "@/lib/client/auctra-data";
+import { permissionCopy } from "@/lib/client/readiness";
 
 const PROMPTS = {
   INDIVIDUAL: ["Save 20 USDC to my savings wallet every Friday at 6 PM", "Never let my wallet fall below 300 USDC"],
@@ -26,13 +27,13 @@ export default function OverviewPage() {
       <PageHeader title="Overview" description={name ? `${name} · business account` : "Personal account"} />
 
       <div className="grid gap-6">
-        {data.wallet?.signerStatus !== "GRANTED" && (
+        {data.wallet && data.wallet.permission !== "VERIFIED" && (
           <Notice
             tone="warning"
-            title="Automations can't send right now"
-            action={<ButtonLink href="/onboarding" size="sm" variant="secondary">Grant permission</ButtonLink>}
+            title={permissionCopy(data.wallet.permission).title}
+            action={<ButtonLink href="/onboarding" size="sm" variant="secondary">{permissionCopy(data.wallet.permission).action}</ButtonLink>}
           >
-            Auctra needs your permission to send scheduled transfers from your wallet.
+            {permissionCopy(data.wallet.permission).description}
           </Notice>
         )}
 

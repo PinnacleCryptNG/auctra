@@ -28,6 +28,7 @@ import {
 import { friendlyError, useApi, type Destination } from "@/lib/client/api";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { categoryLabel, formatUsdc } from "@/lib/client/format";
+import { permissionCopy } from "@/lib/client/readiness";
 
 export default function SettingsPage() {
   return (
@@ -52,7 +53,10 @@ function WalletSection() {
   const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const data = me.data!;
   const wallet = data.wallet!;
-  const granted = wallet.signerStatus === "GRANTED";
+  const verified = wallet.permission === "VERIFIED";
+  // STALE still has Auctra's signer on the wallet, so it can (and should be able to) be revoked.
+  const revocable = wallet.signerStatus === "GRANTED";
+  const copy = permissionCopy(wallet.permission);
 
   async function revoke() {
     setBusy(true);
@@ -78,7 +82,7 @@ function WalletSection() {
             <Badge tone="success" icon={<IconShield />}>Connected</Badge>
           </Detail>
           <Detail label="Automations">
-            {granted ? <Badge tone="success">Can run automations</Badge> : <Badge tone="warning">Permission needed</Badge>}
+            {verified ? <Badge tone="success">Can run automations</Badge> : <Badge tone="warning">{copy.badge}</Badge>}
           </Detail>
           <Detail label="Network">
             <span className="inline-flex flex-wrap items-center gap-2">
@@ -107,12 +111,11 @@ function WalletSection() {
           </div>
           {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
           <div className="flex flex-wrap gap-2">
-            {granted ? (
+            {!verified && <ButtonLink href="/onboarding">{copy.action}</ButtonLink>}
+            {revocable && (
               <Button variant="danger" onClick={() => setConfirming(true)}>
                 Revoke permission
               </Button>
-            ) : (
-              <ButtonLink href="/onboarding">Grant permission</ButtonLink>
             )}
           </div>
         </div>

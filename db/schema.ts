@@ -95,6 +95,8 @@ export const wallets = pgTable("wallets", {
   status: walletStatus("status").default("ACTIVE").notNull(),
   signerStatus: signerStatus("signer_status").default("NOT_GRANTED").notNull(),
   privyPolicyId: text("privy_policy_id"),
+  // SHA-256 of the limits Privy verified on the attached policy (lib/wallet/policy.ts). Not secret.
+  policyFingerprint: text("policy_fingerprint"),
   balanceFloor: usdcAmount("balance_floor"),
   createdAt: createdAt()
 }, (table) => [check("wallets_chain_check", sql`${table.chainId} = 10143`)]);
