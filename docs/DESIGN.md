@@ -4,7 +4,8 @@ How the web app looks and behaves. Product rules live in `docs/PRD.md`; this fil
 
 ## Principles
 
-- **A financial product, not a terminal.** Light, calm surfaces; obsidian ink; signal green reserved for the primary action and success.
+- **Ledger & Flare.** Warm paper, deep aubergine ink, a chartreuse signal for the primary action and success, and a vermilion flare for emphasis. It should never be mistaken for a blue-and-white fintech or a neon crypto dashboard.
+- **Editorial, not terminal.** A soft serif (Fraunces) carries headlines and amounts; a clean grotesk (Instrument Sans) carries the product. Italic flare phrases mark the one idea a heading is about.
 - **Say it, see it, confirm it.** Every money movement is shown as plain fields (amount, when, to, condition, network) before it exists.
 - **State never relies on colour alone.** Every status has an icon and a word.
 - **Mobile is designed, not shrunk.** Bottom navigation, bottom-sheet dialogs, stacked lists instead of tables.
@@ -13,41 +14,52 @@ How the web app looks and behaves. Product rules live in `docs/PRD.md`; this fil
 
 | Token | Value | Use |
 |---|---|---|
-| `obsidian` | `#0B0D0F` | Text ink, dark hero/CTA bands, focus ring |
-| `signal` | `#35D07F` | Primary buttons, success fills, active nav marker |
-| `amber` | `#F2B84B` | Pending / warning / testnet fills and borders |
-| `danger` | `#EF5B5B` | Failed / danger borders |
-| `cloud` | `#F5F6F4` | App background, subtle panels |
-| `slate` | `#667078` | Secondary text, metadata, icons |
-| `line` | `#DCE1DE` | Borders and dividers |
-| `surface` | `#FFFFFF` | Cards, dialogs |
-| `ink-2` | `#3A4146` | Body text one step softer than obsidian |
-| `signal-ink` / `-soft` | `#157A46` / `#E6F8EE` | Green **text** and its tint |
-| `amber-ink` / `-soft` | `#8A5A00` / `#FDF4E2` | Amber **text** and its tint |
-| `danger-ink` / `-soft` | `#B42F2F` / `#FDECEC` | Red **text** and its tint |
-| `obsidian-2`, `obsidian-line` | `#15181B`, `#262B30` | Hover and borders on dark bands |
+| `obsidian` | `#1B1433` | Aubergine ink, dark bands, sidebar, focus ring |
+| `signal` | `#C5F04A` | Chartreuse: primary buttons, success fills, marquee band |
+| `signal-strong` | `#B2E02C` | Primary hover |
+| `flare` | `#FF5C35` | Vermilion: emphasis, the logo dot, final CTA band, hard shadows on dark |
+| `flare-text` | `#E4461E` | Flare used as text (the `accent-italic` utility) |
+| `amber` | `#F5B83D` | Pending / warning / testnet fills and borders |
+| `danger` | `#E5484D` | Failed / danger borders |
+| `cloud` | `#F5EFE4` | Paper: page background, subtle panels |
+| `surface` | `#FFFCF7` | Cards, dialogs |
+| `slate` | `#675F73` | Secondary text, metadata, icons |
+| `line` | `#E4D9C6` | Borders and dividers |
+| `ink-2` | `#463F57` | Body text one step softer than obsidian |
+| `signal-ink` / `-soft` | `#3E6B00` / `#EEF9CC` | Green **text** and its tint |
+| `flare-ink` / `-soft` | `#B8360F` / `#FFE6DC` | Flare **text** on its tint |
+| `amber-ink` / `-soft` | `#8A5A00` / `#FDF1DA` | Amber **text** and its tint |
+| `danger-ink` / `-soft` | `#B42F2F` / `#FDEAEA` | Red **text** and its tint |
+| `obsidian-2`, `obsidian-line` | `#261E42`, `#3B3259` | Hover and borders on dark bands |
 
-The `-ink` and `-soft` shades are darker and lighter versions of the same hues. The core colours used as text on white fail WCAG AA (signal ≈ 2:1), so text uses the `-ink` shades. Measured contrast: slate on white 5.06, slate on cloud 4.66, signal-ink on signal-soft 4.87, amber-ink on amber-soft 5.42, danger-ink on danger-soft 5.43, obsidian on signal 9.72.
+Measured contrast: slate on surface 5.93, slate on cloud 5.30, cloud on obsidian 15.36, obsidian on signal 13.34, obsidian on flare 5.72, flare on obsidian 5.72, signal-ink on signal-soft 5.76, flare-ink on flare-soft 4.93, amber-ink on amber-soft 5.30, danger-ink on danger-soft 5.35, flare-text on cloud 3.53 (headline sizes only). Raw `flare` on paper is 2.68, so it is used only for decoration and large numerals, never body text.
 
-Geometry: `--radius-control` 8px (buttons, small controls), `--radius-input` 10px, `--radius-card` 12px, `--radius-surface` 16px (dialogs, sheets). Badges are 6px, not pills. Spacing uses Tailwind's 4px scale, mainly 1, 2, 3, 4, 5, 6, 8, 10, 16.
+Geometry: `--radius-control` pill (buttons), `--radius-input` 12px, `--radius-card` 18px, `--radius-surface` 24px (dialogs, sheets, feature cards). `--shadow-pop` is a hard 4px aubergine offset shadow used on marketing cards. Utilities: `accent-italic` (italic flare phrase), `bg-ledger` (faint ruled-paper lines), `bg-grain` (dot grain on dark bands). Spacing uses Tailwind's 4px scale.
 
 ## Typography
 
-Inter for product copy and JetBrains Mono for data (addresses, hashes, chain IDs), both self-hosted via `@fontsource`.
+Fraunces (variable, soft and "wonky" axes on) for display, headings and amounts; Instrument Sans for product copy; JetBrains Mono for data (addresses, hashes, chain IDs). All self-hosted via `@fontsource-variable`.
 
 | Utility | Size / line height | Role |
 |---|---|---|
-| `text-display` | clamp(34→64px) / 1.05, 600 | Landing headline only |
-| `text-h1` | clamp(22→28px) / 1.2, 600 | Page heading |
+| `text-display` | Fraunces clamp(40→88px) / 0.98, 500 | Landing headline only |
+| `text-h1` | Fraunces clamp(26→36px) / 1.1, 500 | Page heading |
 | `text-h2` | 17px / 1.4, 600 | Section heading |
 | `text-h3` | 15px / 1.4, 600 | Card heading |
 | `text-body` | 15px / 1.6 | Body |
 | `text-secondary` | 14px / 1.5, slate | Supporting copy |
 | `text-meta` | 12px uppercase, 0.06em | Labels, eyebrows |
 | `text-data` | JetBrains Mono 13px | Addresses, hashes |
-| `text-amount` | clamp(32→44px), tabular | Balance |
+| `text-amount` | Fraunces clamp(32→44px), tabular | Balance |
 
 Fluid sizes use `clamp()` so phones don't get oversized headings.
+
+## Brand assets
+
+- Mark: a chartreuse "A" on an aubergine tile whose crossbar is a vermilion dot, the moment an automation fires. `components/auctra/logo.tsx`, `app/icon.svg` (favicon), `app/apple-icon.png` (180px touch icon), `public/brand/auctra-mark.svg` and `auctra-mark-512.png`.
+- Lockups: `public/brand/auctra-lockup-dark.svg|png` (on aubergine) and `auctra-lockup-light.svg|png` (on paper).
+- Social card: `app/opengraph-image.tsx` (1200×630).
+- Marketing chrome: `SiteHeader` and `SiteFooter` in `components/auctra/site-chrome.tsx`, used by the landing, legal and 404 pages.
 
 ## Components
 
@@ -62,7 +74,7 @@ Fluid sizes use `clamp()` so phones don't get oversized headings.
 - `icons`.
 
 `components/auctra/` holds the product components:
-- `AppShell`, `PageHeader`, `Logo`, `StatusScreen`.
+- `AppShell`, `PageHeader`, `Logo`, `StatusScreen`, `SiteHeader`, `SiteFooter`, `LegalPage`.
 - `ConfirmationCard`, `CreateAutomationDialog`, `AutomationCard`.
 - `ExecutionList`: a table at 768px and up, a stacked list below.
 - `WalletSummary`, `DestinationForm`.

@@ -38,9 +38,9 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
       </a>
 
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface lg:flex">
+      <aside className="bg-grain sticky top-0 hidden h-dvh flex-col bg-obsidian text-cloud lg:flex">
         <div className="px-5 pt-5 pb-4">
-          <Logo href="/dashboard" />
+          <Logo href="/dashboard" tone="light" />
         </div>
         <div className="px-4">
           <Button className="w-full" icon={<IconPlus />} onClick={() => openCreate()}>
@@ -57,10 +57,10 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                     href={href}
                     aria-current={active ? "page" : undefined}
                     className={`flex min-h-10 items-center gap-3 rounded-[var(--radius-control)] px-3 text-sm transition-colors ${
-                      active ? "bg-cloud font-medium text-ink" : "text-ink-2 hover:bg-cloud hover:text-ink"
+                      active ? "bg-cloud font-semibold text-obsidian" : "text-cloud/70 hover:bg-obsidian-2 hover:text-cloud"
                     }`}
                   >
-                    <Icon className={`text-lg ${active ? "text-ink" : "text-slate"}`} />
+                    <Icon className={`text-lg ${active ? "text-flare" : "text-cloud/50"}`} />
                     {label}
                   </Link>
                 </li>
@@ -68,18 +68,19 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
             })}
           </ul>
         </nav>
-        <div className="mt-auto grid gap-3 border-t border-line px-5 py-4">
-          <div className="grid gap-1">
-            <p className="truncate text-sm font-medium">{accountName}</p>
+        <div className="mt-auto grid gap-3 px-4 py-4">
+          <div className="grid gap-2 rounded-[var(--radius-card)] bg-cloud p-4 text-ink">
+            <p className="text-meta">Signed in as</p>
+            <p className="truncate font-display text-lg leading-tight font-medium">{accountName}</p>
             {wallet && <Address value={wallet.address} label="Wallet address" />}
-          </div>
-          <div>
-            <TestnetBadge />
+            <div>
+              <TestnetBadge />
+            </div>
           </div>
           <button
             type="button"
             onClick={onSignOut}
-            className="-mx-2 inline-flex min-h-10 items-center gap-2 rounded-[6px] px-2 text-sm text-slate hover:bg-cloud hover:text-ink"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm text-cloud/60 hover:bg-obsidian-2 hover:text-cloud"
           >
             <IconLogout className="text-base" />
             Sign out
@@ -89,7 +90,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
 
       <div className="flex min-w-0 flex-col">
         {/* Mobile / tablet top bar */}
-        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-surface/95 px-4 py-2 backdrop-blur pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-2 backdrop-blur-md pt-[max(0.5rem,env(safe-area-inset-top))] lg:hidden">
           <Logo href="/dashboard" />
           <div className="flex items-center gap-2">
             <TestnetBadge compact />
@@ -104,7 +105,7 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
         </main>
 
         {/* Mobile / tablet bottom navigation */}
-        <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+        <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-obsidian-line bg-obsidian pb-[env(safe-area-inset-bottom)] text-cloud lg:hidden">
           <ul className="mx-auto grid max-w-lg grid-cols-4">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
@@ -113,11 +114,11 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium ${active ? "text-ink" : "text-slate"}`}
+                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium ${active ? "text-cloud" : "text-cloud/55"}`}
                   >
                     <Icon className="text-[1.375rem]" />
                     {label}
-                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-signal" : "bg-transparent"}`} />
+                    <span aria-hidden="true" className={`mt-0.5 h-0.5 w-5 rounded-full ${active ? "bg-flare" : "bg-transparent"}`} />
                   </Link>
                 </li>
               );
