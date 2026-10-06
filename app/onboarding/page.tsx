@@ -77,15 +77,15 @@ function Shell({ step, reached = step, onBack, children }: { step: number | null
 }
 
 /**
- * Steps back through setup when `onBack` is given; otherwise goes to the
- * previous page, or home when setup was opened directly (e.g. from Telegram).
+ * Steps back through setup when `onBack` is given; with no earlier step to
+ * go back to, it goes to the dashboard.
  */
 function BackButton({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
   return (
     <button
       type="button"
-      onClick={() => (onBack ? onBack() : window.history.length > 1 ? router.back() : router.push("/"))}
+      onClick={() => (onBack ? onBack() : router.push("/dashboard"))}
       className="-ml-2 grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-lg text-ink hover:bg-slate-soft"
     >
       <IconArrowLeft />
