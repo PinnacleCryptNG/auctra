@@ -43,11 +43,11 @@ export default function OnboardingPage() {
   );
 }
 
-function Shell({ step, children }: { step: number | null; children: React.ReactNode }) {
+function Shell({ step, reached = step, onBack, children }: { step: number | null; reached?: number | null; onBack?: () => void; children: React.ReactNode }) {
   return (
     <div className="bg-ledger min-h-dvh">
       <header className="flex items-center gap-1 border-b border-line bg-cloud/90 px-4 py-3 backdrop-blur-md sm:px-6">
-        <BackButton />
+        <BackButton onBack={onBack} />
         <Logo />
       </header>
       <main id="main" className="mx-auto grid w-full max-w-xl gap-6 px-4 py-8 sm:py-12">
@@ -55,7 +55,7 @@ function Shell({ step, children }: { step: number | null; children: React.ReactN
           <nav aria-label="Setup progress">
             <ol className="grid grid-cols-4 gap-2">
               {STEPS.map((label, index) => {
-                const state = index < step ? "done" : index === step ? "current" : "todo";
+                const state = index === step ? "current" : index < (reached ?? step) ? "done" : "todo";
                 return (
                   <li key={label} aria-current={state === "current" ? "step" : undefined} className="grid gap-2">
                     <span className={`h-1 rounded-full ${state === "todo" ? "bg-line" : state === "current" ? "bg-obsidian" : "bg-signal-strong"}`} />
@@ -76,13 +76,16 @@ function Shell({ step, children }: { step: number | null; children: React.ReactN
   );
 }
 
-/** Goes to the previous page, or home when setup was opened directly (e.g. from Telegram). */
-function BackButton() {
+/**
+ * Steps back through setup when `onBack` is given; with no earlier step to
+ * go back to, it goes to the dashboard.
+ */
+function BackButton({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
   return (
     <button
       type="button"
-      onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}
+      onClick={() => (onBack ? onBack() : router.push("/dashboard"))}
       className="-ml-2 grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-lg text-ink hover:bg-slate-soft"
     >
       <IconArrowLeft />
@@ -112,6 +115,8 @@ function Onboarding() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const linkAttempted = useRef(false);
+  // An earlier, finished step the user stepped back to; null shows the current step.
+  const [viewing, setViewing] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -170,9 +175,12 @@ function Onboarding() {
   }
 
   const step = !me?.account ? 0 : !me.wallet ? 1 : destinations.length === 0 ? 2 : me.wallet.permission !== "VERIFIED" ? 3 : 4;
+  const inSetup = Boolean(me?.linked) && step < 4;
+  const shown = inSetup && viewing !== null && viewing < step ? viewing : step;
+  const forward = () => setViewing(shown + 1 < step ? shown + 1 : null);
 
   return (
-    <Shell step={me?.linked && step < 4 ? step : null}>
+    <Shell step={inSetup ? shown : null} reached={inSetup ? step : null} onBack={inSetup && shown > 0 ? () => setViewing(shown - 1) : undefined}>
       <div className="grid gap-4">
         {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
         {!me ? (
@@ -182,6 +190,8 @@ function Onboarding() {
             <h1 className="text-h1">Setup couldn&apos;t start</h1>
             <p className="mt-2 text-secondary">Sign out and sign in again. If it keeps happening, try again later.</p>
           </Card>
+        ) : shown < step ? (
+          <ReviewStep index={shown} me={me} destinations={destinations} onRefresh={refresh} onContinue={forward} />
         ) : step === 0 ? (
           <AccountStep onDone={refresh} />
         ) : step === 1 ? (
@@ -284,6 +294,77 @@ function AccountStep({ onDone }: { onDone: () => void }) {
           Continue
         </Button>
       </form>
+    </StepCard>
+  );
+}
+
+/** A finished step, shown again when the user steps back. Its choices are already saved. */
+function ReviewStep({
+  index,
+  me,
+  destinations,
+  onRefresh,
+  onContinue
+}: {
+  index: number;
+  me: Me;
+  destinations: Destination[];
+  onRefresh: () => void;
+  onContinue: () => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const account = me.account;
+  return (
+    <StepCard
+      index={index}
+      title={["Your account", "Your Auctra Wallet", "Your destinations", "Permission"][index]}
+      description={["This is set and can't be changed.", "You own it. Auctra never sees its keys.", "Auctra only sends to wallets you save.", "Already approved."][index]}
+    >
+      <div className="grid gap-4">
+        {index === 0 && account && (
+          <div className="rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
+            <p className="text-h3">{account.type === "BUSINESS" ? account.businessName ?? "Business" : "Personal"}</p>
+            <p className="text-sm text-slate">{account.type === "BUSINESS" ? "Business account" : "Personal account"}</p>
+          </div>
+        )}
+        {index === 1 && me.wallet && (
+          <div className="grid gap-1 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
+            <span className="text-h3">Auctra Wallet</span>
+            <Address value={me.wallet.address} label="Wallet address" />
+          </div>
+        )}
+        {index === 2 && (
+          <>
+            <ul className="grid gap-2">
+              {destinations.map((d) => (
+                <li key={d.id} className="grid gap-1 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4">
+                  <span className="text-h3">{d.label}</span>
+                  <Address value={d.address} label={`${d.label} address`} />
+                </li>
+              ))}
+            </ul>
+            {adding ? (
+              <DestinationForm
+                defaultCategory={account?.type === "BUSINESS" ? "VENDOR" : "SAVINGS"}
+                onCancel={() => setAdding(false)}
+                onSaved={() => {
+                  setAdding(false);
+                  onRefresh();
+                }}
+              />
+            ) : (
+              <Button variant="secondary" onClick={() => setAdding(true)} className="w-full sm:w-auto sm:justify-self-start">
+                Add another
+              </Button>
+            )}
+          </>
+        )}
+        {!adding && (
+          <Button size="lg" onClick={onContinue} className="w-full sm:w-auto sm:justify-self-start">
+            Continue
+          </Button>
+        )}
+      </div>
     </StepCard>
   );
 }
