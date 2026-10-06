@@ -4,7 +4,10 @@ import { LegalPage } from "@/components/auctra/legal-page";
 export const metadata: Metadata = {
   title: "Terms & Conditions",
   description: "The terms for using Auctra on Monad Testnet.",
-  alternates: { canonical: "/terms" }
+  alternates: { canonical: "/terms" },
+  // Set per page: these objects replace the root layout's rather than merging with it.
+  openGraph: { type: "website", siteName: "Auctra", title: "Terms & Conditions · Auctra", description: "The terms for using Auctra on Monad Testnet.", url: "/terms", images: "/opengraph-image" },
+  twitter: { card: "summary_large_image", images: "/opengraph-image", title: "Terms & Conditions · Auctra", description: "The terms for using Auctra on Monad Testnet." }
 };
 
 export default function TermsPage() {

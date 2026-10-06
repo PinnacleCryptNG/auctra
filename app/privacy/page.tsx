@@ -4,7 +4,10 @@ import { LegalPage } from "@/components/auctra/legal-page";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "What Auctra collects, why, and who it shares it with.",
-  alternates: { canonical: "/privacy" }
+  alternates: { canonical: "/privacy" },
+  // Set per page: these objects replace the root layout's rather than merging with it.
+  openGraph: { type: "website", siteName: "Auctra", title: "Privacy Policy · Auctra", description: "What Auctra collects, why, and who it shares it with.", url: "/privacy", images: "/opengraph-image" },
+  twitter: { card: "summary_large_image", images: "/opengraph-image", title: "Privacy Policy · Auctra", description: "What Auctra collects, why, and who it shares it with." }
 };
 
 export default function PrivacyPage() {
