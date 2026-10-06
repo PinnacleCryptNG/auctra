@@ -1,7 +1,7 @@
 "use client";
 
 import { useCreateWallet, usePrivy, useSigners, useWallets } from "@privy-io/react-auth";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { DestinationForm } from "@/components/auctra/destination-form";
 import { StatusScreen } from "@/components/auctra/status-screen";
@@ -13,6 +13,7 @@ import {
   Card,
   ErrorState,
   Field,
+  IconArrowLeft,
   IconCheck,
   IconShield,
   Input,
@@ -45,7 +46,8 @@ export default function OnboardingPage() {
 function Shell({ step, children }: { step: number | null; children: React.ReactNode }) {
   return (
     <div className="bg-ledger min-h-dvh">
-      <header className="flex items-center justify-between gap-3 border-b border-line bg-cloud/90 px-4 py-3 backdrop-blur-md sm:px-6">
+      <header className="flex items-center gap-1 border-b border-line bg-cloud/90 px-4 py-3 backdrop-blur-md sm:px-6">
+        <BackButton />
         <Logo />
       </header>
       <main id="main" className="mx-auto grid w-full max-w-xl gap-6 px-4 py-8 sm:py-12">
@@ -71,6 +73,21 @@ function Shell({ step, children }: { step: number | null; children: React.ReactN
         <div className="animate-enter">{children}</div>
       </main>
     </div>
+  );
+}
+
+/** Goes to the previous page, or home when setup was opened directly (e.g. from Telegram). */
+function BackButton() {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => (window.history.length > 1 ? router.back() : router.push("/"))}
+      className="-ml-2 grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-lg text-ink hover:bg-slate-soft"
+    >
+      <IconArrowLeft />
+      <span className="sr-only">Back</span>
+    </button>
   );
 }
 
