@@ -62,12 +62,18 @@ export async function authenticate(request: Request, deps?: AuthDeps): Promise<A
 
 type Handler<P> = (auth: AuthedContext, request: Request, params: P) => Promise<Response>;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function withAuth<P = Record<string, never>>(handler: Handler<P>) {
   return async (request: Request, context: { params: Promise<P> }) => {
     try {
       const auth = await authenticate(request);
       if (!auth) return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Please log in again." } }, { status: 401 });
-      return await handler(auth, request, await context.params);
+      const params = await context.params;
+      // Record IDs are UUIDs: anything else can't exist, so answer 404 before it reaches the database.
+      const id = (params as { id?: unknown } | undefined)?.id;
+      if (id !== undefined && (typeof id !== "string" || !UUID.test(id))) throw new UserFacingError("NOT_FOUND", "Not found.");
+      return await handler(auth, request, params);
     } catch (error) {
       return errorResponse(error);
     }
