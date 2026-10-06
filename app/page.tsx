@@ -58,14 +58,14 @@ const USE_CASES = [
     who: "For your business",
     title: "Bills that pay themselves",
     items: ["Pay my vendor 80 monthly", "Pay Ada 100 every Friday", "Sweep 50 to reserve on Mondays"],
-    tone: "flare" as const
+    tone: "dark" as const
   }
 ];
 
 const RECEIPTS = [
   { when: "Fri 18:00", what: "Sent 20 USDC to Savings wallet", status: "Sent", icon: <IconCheck />, tone: "bg-signal text-obsidian" },
   { when: "Mon 09:00", what: "Skipped: balance under 300", status: "Skipped", icon: <IconSkip />, tone: "bg-amber-soft text-amber-ink" },
-  { when: "Tue 12:00", what: "Blocked: over daily limit", status: "Blocked", icon: <IconX />, tone: "bg-flare-soft text-flare-ink" }
+  { when: "Tue 12:00", what: "Blocked: over daily limit", status: "Blocked", icon: <IconX />, tone: "bg-danger-soft text-danger-ink" }
 ];
 
 const SAFETY = [
@@ -80,7 +80,6 @@ export default function Home() {
     <div className="min-h-dvh bg-cloud">
       {/* Hero */}
       <div className="bg-grain relative overflow-hidden bg-obsidian text-cloud">
-        <div aria-hidden="true" className="pointer-events-none absolute -top-40 -right-40 size-[34rem] rounded-full bg-flare/25 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-56 -left-40 size-[30rem] rounded-full bg-signal/15 blur-3xl" />
         <div className="relative">
           <SiteHeader tone="dark" />
@@ -94,7 +93,7 @@ export default function Home() {
                   Say it once. Auctra pays, saves and sweeps for you, on time, every time.
                 </p>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <ButtonLink href={START_HREF} size="lg" icon={<IconArrowRight />} className="flex-row-reverse shadow-[4px_4px_0_0_var(--color-flare)]">
+                  <ButtonLink href={START_HREF} size="lg" icon={<IconArrowRight />} className="flex-row-reverse">
                     {START_LABEL}
                   </ButtonLink>
                   <ButtonLink href="/#how" size="lg" variant="on-dark">
@@ -104,7 +103,7 @@ export default function Home() {
               </div>
 
               <figure className="relative grid gap-3" aria-label="Example: a request and Auctra's confirmation">
-                <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-[6px] bg-flare px-4 py-2.5 text-[0.9375rem] font-medium text-obsidian">
+                <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-[6px] bg-cloud px-4 py-2.5 text-[0.9375rem] font-medium text-obsidian">
                   Save 20 USDC to my savings wallet every Friday at 6 PM.
                 </div>
                 <div className="rotate-[-1.2deg] rounded-[var(--radius-surface)] bg-cloud p-1.5 text-ink shadow-[8px_8px_0_0_var(--color-signal)] transition-transform duration-300 hover:rotate-0">
@@ -126,7 +125,7 @@ export default function Home() {
               className="flex items-center gap-10 font-display text-xl whitespace-nowrap italic [font-variation-settings:'SOFT'_100,'WONK'_1]"
             >
               “{command}”
-              <span aria-hidden="true" className="size-2.5 rounded-full bg-flare" />
+              <span aria-hidden="true" className="size-2.5 rounded-full bg-obsidian" />
             </span>
           ))}
         </div>
@@ -146,7 +145,7 @@ export default function Home() {
               >
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-obsidian px-3 py-1 text-xs font-semibold tracking-wide text-cloud uppercase">{step.tag}</span>
-                  <span className="font-display text-5xl leading-none text-flare italic [font-variation-settings:'SOFT'_100,'WONK'_1]">
+                  <span className="font-display text-5xl leading-none text-obsidian italic [font-variation-settings:'SOFT'_100,'WONK'_1]">
                     {index + 1}
                   </span>
                 </div>
@@ -173,7 +172,7 @@ export default function Home() {
                   useCase.tone === "signal" ? "bg-signal text-obsidian" : "bg-obsidian text-cloud"
                 }`}
               >
-                <p className={`text-xs font-semibold tracking-[0.12em] uppercase ${useCase.tone === "signal" ? "text-obsidian/70" : "text-flare"}`}>
+                <p className={`text-xs font-semibold tracking-[0.12em] uppercase ${useCase.tone === "signal" ? "text-obsidian/70" : "text-signal"}`}>
                   {useCase.who}
                 </p>
                 <h3 className="mt-3 max-w-[16ch] font-display text-3xl leading-[1.05] font-medium tracking-[-0.02em]">{useCase.title}</h3>
@@ -241,7 +240,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="px-4 pb-20 sm:px-6 lg:px-10">
-        <div className="relative mx-auto max-w-[78rem] overflow-hidden rounded-[32px] bg-flare px-6 py-14 text-obsidian sm:px-12 sm:py-20">
+        <div className="relative mx-auto max-w-[78rem] overflow-hidden rounded-[32px] bg-signal px-6 py-14 text-obsidian sm:px-12 sm:py-20">
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -bottom-24 size-80 rounded-full border-[40px] border-obsidian/10" />
           <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between">
             <h2 className="max-w-[16ch] font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] leading-[1] font-medium tracking-[-0.03em] [font-variation-settings:'SOFT'_100,'WONK'_1]">

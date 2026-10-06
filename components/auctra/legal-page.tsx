@@ -15,7 +15,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
         </div>
       </div>
       <main id="main" className="mx-auto max-w-[48rem] px-4 py-12 pb-24 sm:px-6">
-        <div className="space-y-6 text-[1rem] leading-relaxed text-ink-2 [&_a]:font-medium [&_a]:text-ink [&_a]:underline [&_a]:decoration-flare [&_a]:decoration-2 [&_a]:underline-offset-4 [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-ink [&_li]:mt-1.5 [&_li]:marker:text-flare [&_ul]:list-disc [&_ul]:pl-5">
+        <div className="space-y-6 text-[1rem] leading-relaxed text-ink-2 [&_a]:font-medium [&_a]:text-ink [&_a]:underline [&_a]:decoration-signal-strong [&_a]:decoration-2 [&_a]:underline-offset-4 [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-ink [&_li]:mt-1.5 [&_li]:marker:text-ink [&_ul]:list-disc [&_ul]:pl-5">
           {children}
         </div>
       </main>

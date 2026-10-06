@@ -11,7 +11,7 @@ export default function NotFound() {
             aria-hidden="true"
             className="font-display text-[clamp(6rem,4rem+12vw,14rem)] leading-[0.85] font-medium tracking-[-0.05em] text-obsidian [font-variation-settings:'SOFT'_100,'WONK'_1,'opsz'_144]"
           >
-            4<span className="text-flare italic">0</span>4
+            4<span className="accent-italic">0</span>4
           </p>
           <h1 className="text-h1 max-w-[20ch] sm:text-[2.75rem]">
             This page wandered off. <span className="accent-italic">Your money didn&apos;t.</span>

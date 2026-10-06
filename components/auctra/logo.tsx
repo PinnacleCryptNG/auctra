@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * The Auctra mark: a chartreuse "A" on aubergine whose crossbar is a flare
+ * The Auctra mark: a chartreuse "A" on aubergine whose crossbar is a paper
  * dot, the moment an automation fires. Same drawing as app/icon.svg.
  */
 export function LogoMark({ className = "size-8" }: { className?: string }) {
@@ -9,7 +9,7 @@ export function LogoMark({ className = "size-8" }: { className?: string }) {
     <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
       <rect width="32" height="32" rx="9" fill="#1B1433" />
       <path d="M8.5 24.5 16 7.5l7.5 17" fill="none" stroke="#C5F04A" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="19.4" r="2.9" fill="#FF5C35" />
+      <circle cx="16" cy="19.4" r="2.9" fill="#F5EFE4" />
     </svg>
   );
 }
