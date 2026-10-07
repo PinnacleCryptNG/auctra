@@ -11,7 +11,7 @@ import type { AccountContext } from "./accounts";
 import { accountDisplayName } from "./accounts";
 import { recordAudit } from "./audit";
 import { consumeConfirmation, createConfirmation } from "./confirmations";
-import { describeDestination, findDestinationByAddress, findDestinationByLabel } from "./destinations";
+import { describeDestination, findDestinationByAddress, findDestinationByLabel, listDestinations } from "./destinations";
 import { UserFacingError } from "./errors";
 
 export type Automation = typeof automations.$inferSelect;
@@ -78,9 +78,12 @@ export async function prepareAutomation(
   if ("label" in intent.destination) {
     destination = await findDestinationByLabel(db, account.id, intent.destination.label);
     if (!destination) {
+      const saved = await listDestinations(db, account.id);
       throw new UserFacingError(
         "UNKNOWN_DESTINATION",
-        `I don't have a saved destination called "${intent.destination.label}". Save it first with /destinations.`
+        saved.length
+          ? `No saved destination called "${intent.destination.label}". Your saved ones: ${saved.map((d) => d.label).join(", ")}.`
+          : `No saved destination called "${intent.destination.label}". Save one first, then try again.`
       );
     }
   } else {
