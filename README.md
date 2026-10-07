@@ -48,7 +48,7 @@ flowchart LR
   C --> V[Zod + rules]
   V --> S[Summary + Confirm]
   S --> DB[(Postgres)]
-  Cron[Vercel Cron] --> E[Execution service]
+  Cron[Scheduler, every 5 min] --> E[Execution service]
   DB --> E
   E --> P[Privy signer + user-owned policy]
   P --> M[USDC transfer on Monad Testnet]
@@ -67,8 +67,8 @@ Each execution moves through reserve, preflight, submit and confirm, with a uniq
 | Chain | Monad Testnet, USDC, viem |
 | Data | Neon Postgres, Drizzle ORM |
 | Bot | Telegram Bot API and Mini App |
-| Hosting | Vercel, Vercel Cron |
-| Tests | Vitest with in-memory Postgres (PGlite), 140 tests |
+| Hosting | Vercel, GitHub Actions scheduler |
+| Tests | Vitest with in-memory Postgres (PGlite), 147 tests |
 
 ## Demo
 
@@ -99,7 +99,18 @@ npm run dev
 | `NEXT_PUBLIC_APP_URL` or `APP_URL` | Public URL, used for links and social previews (defaults to the Vercel production URL) |
 | `AUCTRA_NETWORK`, `MONAD_CHAIN_ID`, `MONAD_RPC_URL` | `testnet`, `10143`, Monad Testnet RPC |
 
-Full setup (Privy key quorum, Telegram webhook, Vercel) is in [docs/spike.md](docs/spike.md) and the comments in [.env.example](.env.example). The wallet needs testnet MON for gas and test USDC from Circle's faucet.
+Privy key quorum details are in [docs/spike.md](docs/spike.md) and the comments in [.env.example](.env.example). The wallet needs testnet MON for gas and test USDC from Circle's faucet.
+
+### Telegram
+
+1. Create the bot with [@BotFather](https://t.me/BotFather), then send it `/setdomain` with your app's domain so Telegram login works.
+2. In Vercel, add `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (any long random string) and `TELEGRAM_BOT_USERNAME`, then redeploy.
+3. In Privy, turn on Telegram login with the same bot token and name.
+4. Open `https://<your-app>/api/telegram/setup` once. It connects the webhook and sets the bot's description, commands and Open button.
+
+### Scheduler
+
+Vercel's free plan only runs crons once a day, so [.github/workflows/scheduler.yml](.github/workflows/scheduler.yml) calls `/api/cron/execute` every 5 minutes. Add a GitHub repository secret named `CRON_SECRET` with the same value as in Vercel. Set the `APP_URL` repository variable if your app isn't at the default URL.
 
 ### Checks
 

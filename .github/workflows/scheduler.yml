@@ -1,0 +1,30 @@
+name: Scheduler
+
+# Vercel Hobby crons run once a day, so this runs due automations every 5 minutes.
+# GitHub may delay scheduled runs by a few minutes under load.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: scheduler
+  cancel-in-progress: false
+
+jobs:
+  run-due-automations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the execute endpoint
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://auctra-fp4i.vercel.app' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Add a CRON_SECRET repository secret (same value as in Vercel)."
+            exit 1
+          fi
+          curl --fail-with-body -sS --max-time 240 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/cron/execute"
