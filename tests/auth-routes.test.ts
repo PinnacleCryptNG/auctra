@@ -13,7 +13,8 @@ const state = vi.hoisted(() => ({
   db: null as unknown as Db,
   tokens: new Map<string, string>(), // access token -> Privy user ID
   privyWallets: [] as Array<{ id: string; address: string; chain_type: string; archived_at: number | null; imported_at: number | null }>,
-  configured: true
+  configured: true,
+  verifierDown: false
 }));
 
 vi.mock("@/db/client", () => ({ getDb: () => state.db }));
@@ -26,6 +27,7 @@ vi.mock("@/lib/app/runtime", async () => {
         utils: () => ({
           auth: () => ({
             verifyAccessToken: async (token: string) => {
+              if (state.verifierDown) throw Object.assign(new Error("timeout"), { code: "ERR_JWKS_TIMEOUT" });
               const userId = state.tokens.get(token);
               if (!userId) throw new Error("invalid token");
               return { user_id: userId };
@@ -65,6 +67,7 @@ beforeEach(async () => {
   state.tokens = new Map([["alice-token", "did:privy:alice"]]);
   state.privyWallets = [EMBEDDED];
   state.configured = true;
+  state.verifierDown = false;
   vi.stubEnv("AUCTRA_NETWORK", "testnet");
   vi.stubEnv("MONAD_CHAIN_ID", "10143");
 });
@@ -75,6 +78,13 @@ describe("unauthenticated access (unit, real route handlers)", () => {
     for (const handler of [session, registerWalletRoute, createAccountRoute, me]) {
       expect((await call(handler)).status).toBe(401);
     }
+  });
+
+  it("answers 503, not 401, when Privy's token keys can't be fetched", async () => {
+    state.verifierDown = true;
+    const response = await call(me, "alice-token");
+    expect(response.status).toBe(503);
+    expect((await response.json()).error.code).toBe("AUTH_UNAVAILABLE");
   });
 
   it("rejects invalid tokens without touching the database", async () => {
