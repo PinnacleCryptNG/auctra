@@ -6,7 +6,7 @@ import { parseIntent, type IntentModel } from "../ai/intent-parser";
 import { formatDateTime, formatUsdc } from "../format";
 import { formatUsdcAmount } from "../usdc";
 import { usdcAmountString } from "../automation-types";
-import { accountDisplayName, createLinkToken, getAccountContext, getOrCreateTelegramUser, updateSettings, type AccountContext } from "../services/accounts";
+import { createLinkToken, getAccountContext, getOrCreateTelegramUser, updateSettings, type AccountContext } from "../services/accounts";
 import { activateAutomation, changeAutomationStatus, describeAutomation, listAutomations, prepareAutomation, type StatusAction } from "../services/automations";
 import { confirmDestination, describeDestination, DESTINATION_CATEGORIES, listDestinations, proposeDestination, type DestinationCategory } from "../services/destinations";
 import { UserFacingError } from "../services/errors";
@@ -32,21 +32,10 @@ export type BotDeps = {
 const PENDING_TTL_MS = 10 * 60 * 1000;
 
 const HELP = [
-  "Tell me what you want your money to do, for example:",
-  "• Save 20 USDC to my savings wallet every Friday at 6 PM",
-  "• Pay Acme Hosting 80 USDC on the 1st of every month at 09:00, memo INV hosting",
-  "• Send 50 USDC to my reserve every Monday at 10:00 only if my balance is at least 500",
-  "• Never let my wallet fall below 300 USDC",
+  "Just tell me what to do, like:",
+  "Save 20 USDC to my savings wallet every Friday at 6 PM",
   "",
-  "Commands:",
-  "/balance: testnet balances",
-  "/automations: your automations",
-  "/destinations: saved destinations (add with /destinations add <0xaddress> <name> [as vendor])",
-  "/pause, /resume, /cancel, /run: manage an automation",
-  "/history: recent executions",
-  "/help: this message",
-  "",
-  "Auctra runs on Monad Testnet with test USDC only."
+  "Tap / for commands. Test USDC on Monad Testnet."
 ].join("\n");
 
 function onboardingKeyboard(appUrl: string, token: string): InlineKeyboard {
@@ -90,17 +79,16 @@ async function handleText(deps: BotDeps, chatId: string, userId: string, text: s
 
   if (name === "start" || (!isReady(ctx) && name !== "help")) {
     if (isReady(ctx)) {
-      await telegram.sendMessage(chatId, `Welcome back. ${accountDisplayName(ctx.account)}, wallet ${ctx.wallet.address}.\n\n${HELP}`);
+      await telegram.sendMessage(chatId, `Welcome back.\n\n${HELP}`);
       return;
     }
     const token = await createLinkToken(db, userId);
     await telegram.sendMessage(
       chatId,
       [
-        "Welcome to Auctra. Tell Auctra what you want your money to do, and it handles the rest.",
+        "Welcome to Auctra. Tell it what your money should do, and it handles the rest.",
         "",
-        "First, set up your account (personal or business) and your Monad Testnet wallet. Auctra never asks for a seed phrase or private key.",
-        "This link works once and expires in 30 minutes."
+        "First, set up your wallet. Auctra never asks for a seed phrase. This button works for 30 minutes."
       ].join("\n"),
       onboardingKeyboard(deps.appUrl, token)
     );
@@ -132,7 +120,7 @@ async function handleText(deps: BotDeps, chatId: string, userId: string, text: s
     case null:
       return handleRequest(deps, chatId, ctx, text);
     default:
-      await telegram.sendMessage(chatId, `Unknown command /${name}.\n\n${HELP}`);
+      await telegram.sendMessage(chatId, `I don't know /${name}. Tap / to see commands.`);
   }
 }
 
@@ -141,14 +129,14 @@ async function sendBalance(deps: BotDeps, chatId: string, ctx: AccountContext & 
   const monText = (Number(mon) / 1e18).toFixed(4);
   await deps.telegram.sendMessage(
     chatId,
-    [`Wallet ${ctx.wallet.address} (Monad Testnet)`, `USDC: ${formatUsdcAmount(usdc)}`, `MON (gas): ${monText}`].join("\n")
+    [`${formatUsdcAmount(usdc)} USDC`, `${monText} MON for fees`].join("\n")
   );
 }
 
 async function sendAutomations(deps: BotDeps, chatId: string, ctx: AccountContext & { account: NonNullable<AccountContext["account"]> }) {
   const rows = await listAutomations(deps.db, ctx.account.id, ["ACTIVE", "PAUSED"]);
   if (rows.length === 0) {
-    await deps.telegram.sendMessage(chatId, "You have no automations yet. Describe one in a message, e.g. \"Save 20 USDC to my savings wallet every Friday at 6 PM\".");
+    await deps.telegram.sendMessage(chatId, "No automations yet. Just tell me one, like \"Save 20 USDC to my savings wallet every Friday at 6 PM\".");
     return;
   }
   const lines = rows.map(({ automation, destination }, index) => {
@@ -163,7 +151,7 @@ async function sendDestinations(deps: BotDeps, chatId: string, ctx: AccountConte
   const list = rows.length ? rows.map((d) => `• ${describeDestination(d)}`).join("\n") : "No saved destinations yet.";
   await deps.telegram.sendMessage(
     chatId,
-    `${list}\n\nTo add one: /destinations add <0xaddress> <name> [as ${DESTINATION_CATEGORIES.map((c) => c.toLowerCase()).join("|")}]`
+    `${list}\n\nTo add one: /destinations add 0xAddress Name`
   );
 }
 
@@ -177,7 +165,7 @@ async function addDestination(deps: BotDeps, chatId: string, ctx: AccountContext
   }
   const label = rest.join(" ");
   if (!address || !label) {
-    await deps.telegram.sendMessage(chatId, "Usage: /destinations add <0xaddress> <name> [as vendor]");
+    await deps.telegram.sendMessage(chatId, "Try: /destinations add 0xAddress Name");
     return;
   }
 

@@ -149,7 +149,7 @@ describe("telegram bot", () => {
     expect(sent.at(-1)!.text).toContain("Auctra doesn't trade tokens.");
 
     await handleUpdate(deps, text(ctx.user.telegramId!, "/balance"));
-    expect(sent.at(-1)!.text).toContain("USDC: 125.5");
+    expect(sent.at(-1)!.text).toContain("125.5 USDC");
   });
 
   it("pauses and runs an automation from buttons", async () => {
