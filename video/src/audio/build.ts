@@ -288,5 +288,7 @@ header.writeUInt32LE(SR, 24);
 header.writeUInt32LE(SR * 4, 28);
 header.writeUInt16LE(4, 32);
 header.writeUInt16LE(16, 34);
+header.write("data", 36);
+header.writeUInt32LE(data.length, 40);
 writeFileSync(new URL("../../public/soundtrack.wav", import.meta.url), Buffer.concat([header, data]));
 console.log(`soundtrack.wav: ${seconds.toFixed(1)} s, ${SFX.length} interface sounds, ${SCENES.length} scenes`);
