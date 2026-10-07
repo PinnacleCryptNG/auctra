@@ -9,12 +9,8 @@ import { registerWebhook } from "@/lib/telegram/api";
 export async function GET(request: Request) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  const missing = [
-    !token && "TELEGRAM_BOT_TOKEN",
-    !secret && "TELEGRAM_WEBHOOK_SECRET",
-    !process.env.NEXT_PUBLIC_APP_URL && "NEXT_PUBLIC_APP_URL"
-  ].filter(Boolean);
-  if (!token || !secret || missing.length) {
+  const missing = [!token && "TELEGRAM_BOT_TOKEN", !secret && "TELEGRAM_WEBHOOK_SECRET"].filter(Boolean);
+  if (!token || !secret) {
     return NextResponse.json({ ok: false, message: `Add these in Vercel, redeploy, then open this page again: ${missing.join(", ")}` }, { status: 400 });
   }
 
