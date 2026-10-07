@@ -9,6 +9,7 @@ import { canonicalJson, sha256 } from "../services/hash";
 import { createTelegramNotifier } from "../services/notifications";
 import { createTelegramClient } from "../telegram/api";
 import type { BotDeps } from "../telegram/bot";
+import { siteUrl } from "../site";
 import { readUsdcBalance } from "../usdc";
 import { buildUserOwnedTransferPolicy, expectedPolicyFingerprint, verifyWalletPermission, type PermissionCheck, type TransferPolicyLimits } from "../wallet/policy";
 import {
@@ -131,7 +132,7 @@ export function getBotDeps(db: Db = getDb()): BotDeps {
     db,
     telegram: getTelegram(),
     intentModel: createClaudeIntentModel(),
-    appUrl: required("NEXT_PUBLIC_APP_URL").replace(/\/$/, ""),
+    appUrl: siteUrl().origin,
     readBalances: async (address) => {
       const chain = getMonadPublicClient();
       const [mon, usdc] = await Promise.all([chain.getBalance({ address }), readUsdcBalance(chain, address)]);
