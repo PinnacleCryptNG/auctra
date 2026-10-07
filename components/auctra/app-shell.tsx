@@ -12,8 +12,8 @@ import { Logo } from "./logo";
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: IconHome },
   { href: "/dashboard/automations", label: "Automations", icon: IconRepeat },
-  { href: "/dashboard/activity", label: "Activity", icon: IconActivity },
-  { href: "/dashboard/settings", label: "Settings", icon: IconSettings }
+  { href: "/dashboard/activity", label: "History", icon: IconActivity },
+  { href: "/dashboard/settings", label: "Profile", icon: IconSettings }
 ];
 
 function isActive(pathname: string, href: string) {

@@ -118,9 +118,9 @@ export default function OverviewPage() {
         <Card aria-labelledby="recent-heading">
           <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
             <h2 id="recent-heading" className="text-h2">
-              Recent activity
+              Recent transfers
             </h2>
-            {(executions.data?.length ?? 0) > 0 && <SeeAll href="/dashboard/activity" label="View all activity" />}
+            {(executions.data?.length ?? 0) > 0 && <SeeAll href="/dashboard/activity" label="View full history" />}
           </div>
           <div className="mt-3 border-t border-line">
             <Resource
@@ -128,7 +128,7 @@ export default function OverviewPage() {
               loading={executions.loading}
               error={executions.error}
               loadingLabel="Loading recent transfers…"
-              errorTitle="Couldn't load recent activity"
+              errorTitle="Couldn't load recent transfers"
               onRetry={() => refresh(["executions"])}
               empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="Runs will show up here." />}
             >

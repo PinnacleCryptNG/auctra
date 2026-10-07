@@ -542,7 +542,7 @@ function PermissionStep({ me, onDone }: { me: Me; destinations: Destination[]; o
         <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-line bg-cloud/60 p-4 text-sm text-ink-2">
           <IconShield className="mt-0.5 shrink-0 text-lg text-slate" />
           <p>
-            Only you can change these. Revoke anytime in Settings.
+            Only you can change these. Revoke anytime in Profile.
           </p>
         </div>
         {error && (

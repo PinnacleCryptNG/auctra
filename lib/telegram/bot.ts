@@ -262,7 +262,7 @@ async function handleRequest(deps: BotDeps, chatId: string, ctx: AccountContext 
       }
       const warning =
         (await loadPermissionState(db, ctx.wallet)) !== "VERIFIED"
-          ? "\n\nNote: Auctra can't send yet. Approve its permission in the dashboard under Settings."
+          ? "\n\nNote: Auctra can't send yet. Approve its permission in the dashboard under Profile."
           : "";
       await telegram.sendMessage(chatId, prepared.summary + warning, {
         inline_keyboard: [[{ text: "Confirm", callback_data: `ca:${prepared.confirmationId}` }, { text: "Cancel", callback_data: "xx:" }]]

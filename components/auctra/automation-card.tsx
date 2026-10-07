@@ -46,8 +46,8 @@ export function AutomationCard({ automation, onChanged }: { automation: Automati
         execution.status === "CONFIRMED"
           ? { tone: "success", title: `Sent ${amount} to ${automation.destination.label}` }
           : execution.status === "SUBMITTED" || execution.status === "PENDING"
-            ? { tone: "warning", title: "Transfer submitted", text: "Confirming. It will show in Activity." }
-            : { tone: "warning", title: "Nothing was sent", text: "See Activity for the reason." }
+            ? { tone: "warning", title: "Transfer submitted", text: "Confirming. It will show in History." }
+            : { tone: "warning", title: "Nothing was sent", text: "See History for the reason." }
       );
       await onChanged();
     } catch (error) {

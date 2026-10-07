@@ -32,12 +32,12 @@ import { useSignOut } from "@/lib/client/use-sign-out";
 export default function SettingsPage() {
   return (
     <>
-      <PageHeader title="Settings" />
+      <PageHeader title="Profile" />
       <div className="grid gap-6">
+        <ProfileSection />
         <WalletSection />
         <DestinationsSection />
         <PreferencesSection />
-        <AccountSection />
       </div>
     </>
   );
@@ -290,17 +290,32 @@ function PreferencesSection() {
   );
 }
 
-function AccountSection() {
+function ProfileSection() {
   const { me } = useAuctra();
+  const { user } = usePrivy();
   const logout = useSignOut();
   const account = me.data!.account!;
+  const telegram = user?.telegram;
+  const name =
+    account.type === "BUSINESS" && account.businessName
+      ? account.businessName
+      : telegram?.firstName || (telegram?.username ? `@${telegram.username}` : user?.email?.address) || "Your account";
+  const signedInWith = telegram ? `Telegram${telegram.username ? ` (@${telegram.username})` : ""}` : user?.email?.address ?? null;
   return (
-    <Card aria-labelledby="account-heading">
-      <CardHeader id="account-heading" title="Account" />
+    <Card aria-labelledby="profile-heading">
       <CardBody>
-        <dl className="grid gap-4 sm:grid-cols-2">
-          {account.type === "BUSINESS" && <Detail label="Business">{account.businessName}</Detail>}
-          <Detail label="Type">{account.type === "BUSINESS" ? "Business" : "Personal"}</Detail>
+        <div className="flex items-center gap-4">
+          <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-obsidian text-2xl font-semibold text-cloud">
+            {name.replace(/^@/, "").charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <h2 id="profile-heading" className="truncate text-h2">{name}</h2>
+            <p className="text-sm text-slate">{account.type === "BUSINESS" ? "Business account" : "Personal account"}</p>
+          </div>
+        </div>
+        <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+          {signedInWith && <Detail label="Signed in with">{signedInWith}</Detail>}
+          {me.data?.user?.timezone && <Detail label="Timezone">{me.data.user.timezone}</Detail>}
         </dl>
         <div className="mt-5">
           <Button variant="secondary" icon={<IconLogout />} onClick={logout}>
