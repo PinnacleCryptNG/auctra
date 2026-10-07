@@ -13,8 +13,13 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" }
 ];
 
+// Vercel may refuse NEXT_PUBLIC_ names, so the bot username can also be set as
+// TELEGRAM_BOT_USERNAME; it's inlined for the browser either way.
+const botUsername = (process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "");
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  env: { NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: botUsername },
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
