@@ -51,7 +51,7 @@ export default function PrivacyPage() {
 
       <h2>Your choices</h2>
       <p>
-        You can revoke Auctra&apos;s permission on your wallet at any time in Settings, which stops every automation. To have your
+        You can revoke Auctra&apos;s permission on your wallet at any time in Profile, which stops every automation. To have your
         account data deleted, contact us and we&apos;ll remove it. Onchain transactions can&apos;t be deleted by anyone.
       </p>
 

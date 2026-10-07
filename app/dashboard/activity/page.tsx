@@ -29,8 +29,8 @@ export default function ActivityPage() {
   return (
     <>
       <PageHeader
-        title="Activity"
-        description="Every run, newest first."
+        title="History"
+        description="Every transfer, newest first."
         actions={
           (executions.data?.length ?? 0) > 0 && (
             <Button variant="secondary" icon={<IconDownload />} onClick={exportCsv} loading={exporting} loadingLabel="Preparing CSV…">
@@ -50,7 +50,7 @@ export default function ActivityPage() {
           loading={executions.loading}
           error={executions.error}
           loadingLabel="Loading your transfers…"
-          errorTitle="Couldn't load your activity"
+          errorTitle="Couldn't load your history"
           onRetry={() => refresh(["executions"])}
           empty={<EmptyState icon={<IconActivity />} title="No transfers yet" description="Runs will show up here." />}
         >
