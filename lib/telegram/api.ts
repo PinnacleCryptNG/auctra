@@ -56,3 +56,42 @@ export async function registerWebhook(
   const data = (await response.json().catch(() => ({}))) as { ok?: boolean; description?: string };
   return { ok: response.ok && data.ok === true, description: data.description };
 }
+
+export const BOT_PROFILE = {
+  description: [
+    "Tell Auctra what your money should do, in plain words. It schedules USDC transfers and asks you to confirm before anything runs.",
+    "",
+    "Try: Save 20 USDC to my savings wallet every Friday at 6 PM",
+    "",
+    "Monad Testnet, test USDC only. Auctra never asks for a seed phrase."
+  ].join("\n"),
+  shortDescription: "Automate USDC transfers in plain words. Monad Testnet.",
+  commands: [
+    { command: "start", description: "Set up or check your account" },
+    { command: "balance", description: "Wallet balance" },
+    { command: "automations", description: "Your automations" },
+    { command: "destinations", description: "Saved destinations" },
+    { command: "history", description: "Recent transfers" },
+    { command: "help", description: "What Auctra can do" }
+  ]
+};
+
+/** Sets the bot's description, About text, command menu and "Open" button. */
+export async function configureBotProfile(token: string, appUrl: string, fetchImpl: typeof fetch = fetch): Promise<string[]> {
+  const calls: [string, Record<string, unknown>][] = [
+    ["setMyDescription", { description: BOT_PROFILE.description }],
+    ["setMyShortDescription", { short_description: BOT_PROFILE.shortDescription }],
+    ["setMyCommands", { commands: BOT_PROFILE.commands }],
+    ["setChatMenuButton", { menu_button: { type: "web_app", text: "Open", web_app: { url: `${appUrl}/dashboard` } } }]
+  ];
+  const failed: string[] = [];
+  for (const [method, body] of calls) {
+    const response = await fetchImpl(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) failed.push(method);
+  }
+  return failed;
+}
