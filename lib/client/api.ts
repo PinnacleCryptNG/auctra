@@ -12,29 +12,38 @@ export class ApiError extends Error {
 
 /** fetch() for Auctra's API with the Privy access token attached. */
 export function useApi() {
-  const { getAccessToken } = usePrivy();
+  const { getAccessToken, logout } = usePrivy();
   // Keep request/download stable even if Privy hands back a new function each
   // render; otherwise every consumer's effects would re-run in a loop.
-  const tokenRef = useRef(getAccessToken);
+  const privyRef = useRef({ getAccessToken, logout });
   useEffect(() => {
-    tokenRef.current = getAccessToken;
-  }, [getAccessToken]);
+    privyRef.current = { getAccessToken, logout };
+  }, [getAccessToken, logout]);
 
   const request = useCallback(
     async <T,>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> => {
-      const token = await tokenRef.current();
-      let response: Response;
-      try {
-        response = await fetch(path, {
-          method: init.method ?? "GET",
-          headers: {
-            ...(token ? { authorization: `Bearer ${token}` } : {}),
-            ...(init.body !== undefined ? { "content-type": "application/json" } : {})
-          },
-          body: init.body !== undefined ? JSON.stringify(init.body) : undefined
-        });
-      } catch {
-        throw new ApiError("NETWORK", "Couldn't reach Auctra.", 0);
+      const send = async () => {
+        const token = await privyRef.current.getAccessToken();
+        try {
+          return await fetch(path, {
+            method: init.method ?? "GET",
+            headers: {
+              ...(token ? { authorization: `Bearer ${token}` } : {}),
+              ...(init.body !== undefined ? { "content-type": "application/json" } : {})
+            },
+            body: init.body !== undefined ? JSON.stringify(init.body) : undefined
+          });
+        } catch {
+          throw new ApiError("NETWORK", "Couldn't reach Auctra.", 0);
+        }
+      };
+      // A 401 is often a token that expired mid-request (or a phone clock that's off):
+      // fetch a fresh one and try once more. Still refused means the login is gone, so
+      // sign out and let the page show its Sign in button instead of a dead end.
+      let response = await send();
+      if (response.status === 401) {
+        response = await send();
+        if (response.status === 401) await privyRef.current.logout().catch(() => {});
       }
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -47,7 +56,7 @@ export function useApi() {
 
   const download = useCallback(
     async (path: string, filename: string) => {
-      const token = await tokenRef.current();
+      const token = await privyRef.current.getAccessToken();
       const response = await fetch(path, { headers: token ? { authorization: `Bearer ${token}` } : {} });
       if (!response.ok) throw new ApiError("DOWNLOAD", "Download failed.", response.status);
       const url = URL.createObjectURL(await response.blob());

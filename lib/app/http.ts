@@ -20,7 +20,7 @@ export function errorResponse(error: unknown) {
     );
   }
   if (error instanceof UserFacingError) {
-    const status = error.code === "NOT_FOUND" ? 404 : error.code === "AI_UNAVAILABLE" ? 503 : 400;
+    const status = error.code === "NOT_FOUND" ? 404 : error.code === "AI_UNAVAILABLE" || error.code === "AUTH_UNAVAILABLE" ? 503 : 400;
     return NextResponse.json({ error: { code: error.code, message: error.message } }, { status });
   }
   if (error instanceof ZodError) {
@@ -54,11 +54,23 @@ export async function authenticate(request: Request, deps?: AuthDeps): Promise<A
   let privyUserId: string;
   try {
     privyUserId = (await verifyAccessToken(token)).user_id;
-  } catch {
+  } catch (error) {
+    // Privy's signing keys couldn't be fetched: the token may be fine, so don't tell the user their session ended.
+    if (isVerifierUnavailable(error)) {
+      console.error("Couldn't fetch Privy's token keys", error);
+      throw new UserFacingError("AUTH_UNAVAILABLE", "Couldn't check your sign-in just now. Try again in a moment.");
+    }
     return null;
   }
   if (!privyUserId) return null;
   return { db, privyUserId, ctx: await getAccountContext(db, { privyUserId }) };
+}
+
+/** jose's errors for a JWKS fetch that timed out or got a bad response, and fetch's own network error. */
+function isVerifierUnavailable(error: unknown) {
+  if (error instanceof TypeError) return true;
+  const code = (error as { code?: unknown } | null)?.code;
+  return code === "ERR_JWKS_TIMEOUT" || code === "ERR_JOSE_GENERIC";
 }
 
 type Handler<P> = (auth: AuthedContext, request: Request, params: P) => Promise<Response>;

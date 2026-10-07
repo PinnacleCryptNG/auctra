@@ -110,7 +110,7 @@ Each execution moves through reserve, preflight, submit and confirm, with a uniq
 | Data | Neon Postgres, Drizzle ORM |
 | Bot | Telegram Bot API and Mini App |
 | Hosting | Vercel, GitHub Actions scheduler |
-| Tests | Vitest with in-memory Postgres (PGlite), 147 tests |
+| Tests | Vitest with in-memory Postgres (PGlite), 148 tests |
 
 ## Run it locally
 
