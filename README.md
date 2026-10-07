@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://auctra-fp4i.vercel.app"><b>Live app</b></a> ·
+  <a href="https://t.me/AuctraBot"><b>Telegram bot</b></a> ·
   <a href="#try-it-in-3-minutes">Try it</a> ·
   <a href="docs/PRD.md">Product spec</a> ·
   <a href="docs/DESIGN.md">Design system</a>
@@ -27,7 +28,7 @@ Auctra is an AI money agent you talk to in Telegram or on the web. You say what 
 
 ## Try it in 3 minutes
 
-1. Open the [live app](https://auctra-fp4i.vercel.app) and tap **Start in Telegram**, or sign in on the web with email.
+1. Open [@AuctraBot](https://t.me/AuctraBot) in Telegram and send `/start`, or sign in to the [live app](https://auctra-fp4i.vercel.app) with email.
 2. Pick **Personal** or **Business**. Auctra creates your wallet and asks you to approve its spending limits.
 3. Get test funds: MON for fees from the [Monad faucet](https://faucet.monad.xyz) and test USDC from [Circle's faucet](https://faucet.circle.com) (choose Monad Testnet).
 4. Save a destination, for example any address named **Savings**.
