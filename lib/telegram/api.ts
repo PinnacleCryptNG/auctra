@@ -41,3 +41,18 @@ export function createTelegramClient(token: string, fetchImpl: typeof fetch = fe
       call("editMessageReplyMarkup", { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } })
   };
 }
+
+/** Points the bot at Auctra's webhook. Returns Telegram's own description on failure. */
+export async function registerWebhook(
+  token: string,
+  input: { url: string; secret: string },
+  fetchImpl: typeof fetch = fetch
+): Promise<{ ok: boolean; description?: string }> {
+  const response = await fetchImpl(`https://api.telegram.org/bot${token}/setWebhook`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ url: input.url, secret_token: input.secret, allowed_updates: ["message", "callback_query"] })
+  });
+  const data = (await response.json().catch(() => ({}))) as { ok?: boolean; description?: string };
+  return { ok: response.ok && data.ok === true, description: data.description };
+}
