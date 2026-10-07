@@ -190,7 +190,10 @@ describe("automations", () => {
 
   it("rejects unknown labels, amounts above the cap, and past one-time dates", async () => {
     const { ctx } = await createFixture(db);
-    await expect(prepareAutomation(db, ctx, { ...savingsIntent, destination: { label: "rent" } }, NOW)).rejects.toMatchObject({ code: "UNKNOWN_DESTINATION" });
+    await expect(prepareAutomation(db, ctx, { ...savingsIntent, destination: { label: "rent" } }, NOW)).rejects.toMatchObject({
+      code: "UNKNOWN_DESTINATION",
+      message: 'No saved destination called "rent". Your saved ones: Savings wallet.',
+    });
     await expect(prepareAutomation(db, ctx, { ...savingsIntent, amount: "100.01" }, NOW)).rejects.toMatchObject({ code: "AMOUNT_ABOVE_CAP" });
     await expect(
       prepareAutomation(db, ctx, { ...savingsIntent, schedule: { frequency: "ONCE", date: "2026-01-01", time: "09:00" } }, NOW)
