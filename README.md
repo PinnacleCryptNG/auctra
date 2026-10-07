@@ -10,35 +10,76 @@
 
 <p align="center">
   <a href="https://auctra-fp4i.vercel.app"><b>Live app</b></a> ·
-  <a href="#demo">Demo script</a> ·
+  <a href="#try-it-in-3-minutes">Try it</a> ·
   <a href="docs/PRD.md">Product spec</a> ·
   <a href="docs/DESIGN.md">Design system</a>
 </p>
 
+<p align="center">
+  <b>Monad Metropolis Hackathon</b> · Runs on <b>Monad Testnet</b> (chain 10143) with test USDC
+</p>
+
 ---
+
+## In one line
+
+Auctra is an AI money agent you talk to in Telegram or on the web. You say what your money should do, it shows you the exact transfer, and after you confirm it runs on schedule from your own wallet on Monad, without ever holding your keys.
+
+## Try it in 3 minutes
+
+1. Open the [live app](https://auctra-fp4i.vercel.app) and tap **Start in Telegram**, or sign in on the web with email.
+2. Pick **Personal** or **Business**. Auctra creates your wallet and asks you to approve its spending limits.
+3. Get test funds: MON for fees from the [Monad faucet](https://faucet.monad.xyz) and test USDC from [Circle's faucet](https://faucet.circle.com) (choose Monad Testnet).
+4. Save a destination, for example any address named **Savings**.
+5. Type: *"Save 20 USDC to my savings wallet every Friday at 6 PM."*
+6. Check the summary and tap **Confirm**.
+7. Open the automation and press **Run now** to see it send right away. The receipt links to the transaction on the Monad Testnet explorer.
+
+In Telegram, `/balance`, `/automations`, `/destinations` and `/history` show the same data as the dashboard.
 
 ## The problem
 
-Recurring money tasks are easy to describe and tedious to do: save every Friday, pay rent on the 1st, pay a contractor weekly, keep a reserve topped up. Crypto wallets make you click through every one of them by hand, and "AI agents" that could do it usually ask for your keys.
+Recurring money tasks are easy to describe and tedious to do: save every Friday, pay rent on the 1st, pay a contractor weekly, keep a reserve topped up. Crypto wallets make you click through every one of them by hand, and AI agents that could do it usually ask for your keys.
 
 ## What Auctra does
-
-You type a request like **"Save 20 USDC to my savings wallet every Friday at 6 PM"** in Telegram or on the web. Auctra:
 
 1. **Understands it.** Claude extracts the amount, recipient, schedule and any condition. Nothing else.
 2. **Shows it back.** You see the exact transfer as plain fields and tap **Confirm**. Nothing runs before that.
 3. **Runs it.** On schedule, Auctra checks your balance and limits, sends the USDC from your own wallet, and messages you a receipt.
 
-It works for people (savings, rent, balance floors) and for small businesses (vendors, contractors, reserve sweeps).
+It works for people (savings, rent, balance floors) and for small businesses (vendors, contractors, reserve sweeps, memos and CSV export).
+
+Example requests it understands:
+
+- *Save 20 USDC to my savings wallet every Friday at 6 PM*
+- *Pay Acme Hosting 80 USDC on the 1st of every month at 09:00, memo INV hosting*
+- *Send 50 USDC to my reserve every Monday at 10:00 only if my balance is at least 500*
+
+## Why Monad
+
+- **Small, frequent transfers need cheap, fast blocks.** A weekly 20 USDC saving only makes sense when fees are tiny and the receipt arrives in seconds. Monad gives both.
+- **It's EVM.** Standard USDC, viem and Privy's embedded wallets work as they are, with no custom contracts needed.
+- **Every run is verifiable.** Each execution stores its transaction hash and links to the Monad Testnet explorer.
 
 ## Why it's safe
 
 - **Your keys stay yours.** Wallets are Privy embedded wallets owned by the user. Auctra never sees a seed phrase or private key.
-- **Limits enforced twice.** Per-transfer and daily caps are checked by Auctra, then again by a Privy policy the user owns. Auctra can't raise its own limits.
+- **Limits enforced twice.** Per-transfer (100 USDC) and daily (250 USDC) caps are checked by Auctra, then again by a Privy policy the user owns. Auctra can't raise its own limits.
 - **Saved recipients only.** Money can only go to destinations the user saved and confirmed.
 - **AI never moves money.** The model only fills in fields. Validation, scheduling and execution are deterministic code.
 - **Every run has an answer.** Each execution ends as sent, skipped or blocked, with the reason and the transaction hash.
-- **Testnet only.** Monad Testnet (chain 10143) and test USDC. CI fails on any mainnet reference.
+- **Testnet only.** CI fails on any Monad mainnet reference.
+
+## What's working
+
+| | |
+|---|---|
+| Plain-language automations | One-time, daily, weekly and monthly schedules, timezones and DST, "only if balance is at least" conditions, memos |
+| Telegram bot | Sign in, create and confirm automations, balances, history, receipts after every run |
+| Web dashboard | Automations with pause, resume, cancel and Run now; destinations; activity with CSV export; settings |
+| Wallets | Privy embedded wallets with a session signer and a user-owned spending policy |
+| Scheduler | Checks for due automations every 5 minutes; each run has a unique key so it can never send twice |
+| Accounts | Personal and Business, with business name and destination categories |
 
 ## How it works
 
@@ -69,15 +110,6 @@ Each execution moves through reserve, preflight, submit and confirm, with a uniq
 | Bot | Telegram Bot API and Mini App |
 | Hosting | Vercel, GitHub Actions scheduler |
 | Tests | Vitest with in-memory Postgres (PGlite), 147 tests |
-
-## Demo
-
-1. Open Auctra in Telegram or at the live app and sign in.
-2. Pick Personal or Business, create the wallet, save a "Savings" destination and approve the limits.
-3. Send: *"Save 20 USDC to my savings wallet every Friday at 6 PM."*
-4. Check the summary and confirm.
-5. On the dashboard, open the automation and press **Run now**.
-6. Open the transaction in the Monad Testnet explorer, then see the receipt in Telegram.
 
 ## Run it locally
 
