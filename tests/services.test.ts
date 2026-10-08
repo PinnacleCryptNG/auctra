@@ -192,7 +192,7 @@ describe("automations", () => {
     const { ctx } = await createFixture(db);
     await expect(prepareAutomation(db, ctx, { ...savingsIntent, destination: { label: "rent" } }, NOW)).rejects.toMatchObject({
       code: "UNKNOWN_DESTINATION",
-      message: 'No saved destination called "rent". Your saved ones: Savings wallet.',
+      message: 'No saved destination called "rent". Your saved ones: Savings wallet. To add another, go to Profile, then try again.',
     });
     await expect(prepareAutomation(db, ctx, { ...savingsIntent, amount: "100.01" }, NOW)).rejects.toMatchObject({ code: "AMOUNT_ABOVE_CAP" });
     await expect(

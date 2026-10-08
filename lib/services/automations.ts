@@ -82,8 +82,8 @@ export async function prepareAutomation(
       throw new UserFacingError(
         "UNKNOWN_DESTINATION",
         saved.length
-          ? `No saved destination called "${intent.destination.label}". Your saved ones: ${saved.map((d) => d.label).join(", ")}.`
-          : `No saved destination called "${intent.destination.label}". Save one first, then try again.`
+          ? `No saved destination called "${intent.destination.label}". Your saved ones: ${saved.map((d) => d.label).join(", ")}. To add another, go to Profile, then try again.`
+          : `You don't have a destination wallet yet. Add one under Profile, then try creating the automation again.`
       );
     }
   } else {

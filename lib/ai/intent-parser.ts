@@ -141,7 +141,7 @@ export function toFinancialIntent(extraction: Extraction): ParseResult {
     return { kind: "clarify", question: "Should I send to the saved destination name or to the address you typed? Please give just one." };
   }
   if (!extraction.destinationLabel && !extraction.destinationAddress) {
-    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations." };
+    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations from Profile." };
   }
   if (!extraction.frequency) {
     return { kind: "clarify", question: "When should it run: once, every day, every week, or every month?" };
@@ -203,7 +203,7 @@ export async function parseIntent(
   // An address must come from the user, never from the model.
   const address = checked.data.destinationAddress;
   if (address && !input.message.toLowerCase().includes(address.toLowerCase())) {
-    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations." };
+    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations from Profile." };
   }
   return toFinancialIntent(checked.data);
 }
