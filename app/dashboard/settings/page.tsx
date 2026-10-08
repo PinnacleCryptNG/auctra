@@ -1,6 +1,7 @@
 "use client";
 
 import { usePrivy, useSigners } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/auctra/app-shell";
 import { DestinationForm } from "@/components/auctra/destination-form";
@@ -23,7 +24,7 @@ import {
   Input,
   Notice
 } from "@/components/ui";
-import { friendlyError, useApi, type Destination } from "@/lib/client/api";
+import { friendlyError, useApi, type Destination, type Me } from "@/lib/client/api";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { categoryLabel, formatUsdc } from "@/lib/client/format";
 import { permissionCopy } from "@/lib/client/readiness";
@@ -126,6 +127,18 @@ function DestinationsSection() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ title: string; description: string } | null>(null);
   const business = me.data?.account?.type === "BUSINESS";
+  const router = useRouter();
+
+  // Auctra may only pay saved destinations, so any change needs a fresh approval.
+  // Go straight to that review instead of leaving it for the next failed send.
+  async function afterChange() {
+    const next = await request<Me>("/api/me").catch(() => null);
+    if (next?.wallet && next.wallet.permission !== "VERIFIED") {
+      router.push("/onboarding");
+      return;
+    }
+    await refresh(["me", "destinations", "automations"]);
+  }
 
   async function remove() {
     if (!removing) return;
@@ -133,8 +146,8 @@ function DestinationsSection() {
     setError(null);
     try {
       await request(`/api/destinations/${removing.id}`, { method: "DELETE" });
-      await refresh(["destinations", "automations"]);
       setRemoving(null);
+      await afterChange();
     } catch (e) {
       setError(friendlyError(e, "The destination wasn't removed"));
       setRemoving(null);
@@ -197,7 +210,7 @@ function DestinationsSection() {
             onCancel={() => setAdding(false)}
             onSaved={() => {
               setAdding(false);
-              refresh(["destinations"]);
+              afterChange();
             }}
           />
         )}
