@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Button, Dialog, Field, IconCheck, Notice, Textarea } from "@/components/ui";
+import { Button, ButtonLink, Dialog, Field, IconCheck, Notice, Textarea } from "@/components/ui";
 import { friendlyError, useApi, type PrepareResponse } from "@/lib/client/api";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { formatDay, formatTime, formatUsdc } from "@/lib/client/format";
+import { permissionCopy } from "@/lib/client/readiness";
 import { ConfirmationCard } from "./confirmation-card";
 import { DestinationForm } from "./destination-form";
 
@@ -41,6 +42,7 @@ export function CreateAutomationDialog() {
   const [busy, setBusy] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const accountType = me.data?.account?.type ?? "INDIVIDUAL";
+  const permission = me.data?.wallet?.permission;
 
   useEffect(() => {
     if (createRequest.open) {
@@ -108,6 +110,15 @@ export function CreateAutomationDialog() {
         }}
         className="grid gap-4"
       >
+        {permission && permission !== "VERIFIED" && (
+          <Notice
+            tone="warning"
+            title={permissionCopy(permission).title}
+            action={<ButtonLink href="/onboarding" size="sm" onClick={closeCreate}>{permissionCopy(permission).action}</ButtonLink>}
+          >
+            {permissionCopy(permission).description}
+          </Notice>
+        )}
         <Field label="What should Auctra do?" hint="Amount, who and when. You confirm first.">
           {(p) => (
             <Textarea
