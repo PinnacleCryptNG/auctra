@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createClaudeIntentModel, parseIntent, toFinancialIntent, type Extraction, type IntentModel } from "../lib/ai/intent-parser";
+import { createClaudeIntentModel, DEFAULT_INTENT_MODEL, parseIntent, toFinancialIntent, type Extraction, type IntentModel } from "../lib/ai/intent-parser";
 import { UserFacingError } from "../lib/services/errors";
 
 const base: Extraction = {
@@ -148,10 +148,25 @@ describe("createClaudeIntentModel", () => {
         ? json(400, { type: "error", error: { type: "invalid_request_error", message: "fallbacks not enabled" } })
         : reply(extraction);
     });
-    const model = createClaudeIntentModel({ apiKey: "test", fetch: fetchMock as unknown as typeof fetch });
+    const model = createClaudeIntentModel({ apiKey: "test", model: "claude-opus-5-5", fetch: fetchMock as unknown as typeof fetch });
     expect(await model(input)).toEqual(extraction);
     expect(bodies[0]).toHaveProperty("fallbacks", "default");
     expect(bodies[1]).not.toHaveProperty("fallbacks");
+  });
+
+  it("asks the default small model once, without effort or fallbacks", async () => {
+    const extraction = { ...base, amount: "10", destinationLabel: "rent", time: null };
+    const bodies: Record<string, unknown>[] = [];
+    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return reply(extraction);
+    });
+    const model = createClaudeIntentModel({ apiKey: "test", fetch: fetchMock as unknown as typeof fetch });
+    expect(await model(input)).toEqual(extraction);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toMatchObject({ model: DEFAULT_INTENT_MODEL });
+    expect(bodies[0]).not.toHaveProperty("fallbacks");
+    expect(bodies[0].output_config).not.toHaveProperty("effort");
   });
 
   it("turns API failures into a user-facing error instead of a crash", async () => {
