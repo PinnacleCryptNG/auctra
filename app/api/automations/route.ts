@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { readJson, requireReady, withAuth } from "@/lib/app/http";
+import { bookNextWakeUpSafely } from "@/lib/scheduler/wakeup";
 import { activateAutomation, describeAutomation, listAutomations } from "@/lib/services/automations";
 
 export const GET = withAuth(async (auth) => {
@@ -19,5 +20,7 @@ export const GET = withAuth(async (auth) => {
 export const POST = withAuth(async (auth, request) => {
   const ctx = requireReady(auth);
   const { confirmationId } = await readJson(request, z.object({ confirmationId: z.string().uuid() }));
-  return NextResponse.json({ automation: await activateAutomation(auth.db, ctx, confirmationId) });
+  const automation = await activateAutomation(auth.db, ctx, confirmationId);
+  await bookNextWakeUpSafely(auth.db);
+  return NextResponse.json({ automation });
 });

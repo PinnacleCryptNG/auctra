@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db/client";
 import { safeEqual } from "@/lib/app/http";
 import { getExecutionDeps } from "@/lib/app/runtime";
+import { bookNextWakeUpSafely } from "@/lib/scheduler/wakeup";
 import { assertTestnetEnvironment } from "@/lib/network";
 import { reconcileExecutions, runDueAutomations } from "@/lib/services/executions";
 
@@ -20,5 +21,7 @@ export async function GET(request: Request) {
   const deps = getExecutionDeps(db);
   const settled = await reconcileExecutions(db, deps);
   const results = await runDueAutomations(db, deps);
-  return NextResponse.json({ ran: results, settled: settled.map((e) => ({ id: e.id, status: e.status })) });
+  // Chain: book the wake-up for the next due automation (lib/scheduler/wakeup.ts).
+  const wakeUp = await bookNextWakeUpSafely(db);
+  return NextResponse.json({ ran: results, settled: settled.map((e) => ({ id: e.id, status: e.status })), wakeUp });
 }

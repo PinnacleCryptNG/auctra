@@ -10,6 +10,7 @@ import { createTelegramNotifier } from "../services/notifications";
 import { createTelegramClient } from "../telegram/api";
 import type { BotDeps } from "../telegram/bot";
 import { siteUrl } from "../site";
+import { bookNextWakeUpSafely } from "../scheduler/wakeup";
 import { readUsdcBalance } from "../usdc";
 import { buildUserOwnedTransferPolicy, expectedPolicyFingerprint, verifyWalletPermission, type PermissionCheck, type TransferPolicyLimits } from "../wallet/policy";
 import {
@@ -141,6 +142,9 @@ export function getBotDeps(db: Db = getDb()): BotDeps {
     execution: getExecutionDeps(db),
     // Changing destinations never touches the Privy policy: the stored permission
     // becomes STALE (lib/services/permission.ts) until the user approves again.
-    onDestinationsChanged: async () => {}
+    onDestinationsChanged: async () => {},
+    onScheduleChanged: async () => {
+      await bookNextWakeUpSafely(db);
+    }
   };
 }

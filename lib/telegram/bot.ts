@@ -26,6 +26,8 @@ export type BotDeps = {
   execution: ExecutionDeps;
   /** Called after a destination is saved, to update the Privy policy allowlist. */
   onDestinationsChanged: (accountId: string) => Promise<void>;
+  /** Called after an automation is activated or resumed, to book its on-time wake-up. */
+  onScheduleChanged?: () => Promise<void>;
   now?: () => Date;
 };
 
@@ -295,6 +297,7 @@ async function handleCallback(deps: BotDeps, callback: NonNullable<TelegramUpdat
     switch (prefix) {
       case "ca": {
         const automation = await activateAutomation(db, ctx, id, deps.now?.());
+        await deps.onScheduleChanged?.();
         return reply(`Automation active. First run: ${formatDateTime(automation.nextRunAt!, automation.timezone)}.`);
       }
       case "cd": {
@@ -316,6 +319,7 @@ async function handleCallback(deps: BotDeps, callback: NonNullable<TelegramUpdat
       case "ac": {
         const action: StatusAction = prefix === "ap" ? "pause" : prefix === "ar" ? "resume" : "cancel";
         const updated = await changeAutomationStatus(db, { userId: ctx.user.id, accountId: ctx.account.id, automationId: id, action }, deps.now?.());
+        if (action === "resume") await deps.onScheduleChanged?.();
         return reply(`Automation ${updated.status.toLowerCase()}.`);
       }
       case "rn": {
