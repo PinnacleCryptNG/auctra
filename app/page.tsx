@@ -1,7 +1,11 @@
+import type { CSSProperties } from "react";
 import { ConfirmationCard } from "@/components/auctra/confirmation-card";
 import { SiteFooter, SiteHeader, START_HREF, START_LABEL } from "@/components/auctra/site-chrome";
 import { ButtonLink, IconActivity, IconArrowRight, IconCheck, IconContacts, IconGauge, IconKey, IconShield, IconSkip, IconX } from "@/components/ui";
 import type { AutomationPreview } from "@/lib/client/api";
+
+/** Delay for a staggered `rise` animation. */
+const delay = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
 // A realistic example, rendered with the same component users confirm with.
 const EXAMPLE: AutomationPreview = {
@@ -86,13 +90,13 @@ export default function Home() {
           <main id="main">
             <section className="mx-auto grid max-w-[78rem] items-center gap-12 px-4 pt-8 pb-20 sm:px-6 sm:pt-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,27rem)] lg:gap-16 lg:px-10 lg:pt-20 lg:pb-28">
               <div className="grid gap-7">
-                <h1 className="text-display max-w-[13ch]">
+                <h1 className="rise text-display max-w-[13ch]">
                   Money that <span className="accent-italic">moves itself.</span>
                 </h1>
-                <p className="max-w-[34rem] text-[1.0625rem] leading-relaxed text-cloud/75">
+                <p className="rise max-w-[34rem] text-[1.0625rem] leading-relaxed text-cloud/75" style={delay(120)}>
                   Say it once. Auctra pays, saves and sweeps for you, on time, every time.
                 </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="rise flex flex-col gap-3 sm:flex-row" style={delay(220)}>
                   <ButtonLink href={START_HREF} size="lg" icon={<IconArrowRight />} className="flex-row-reverse">
                     {START_LABEL}
                   </ButtonLink>
@@ -103,10 +107,10 @@ export default function Home() {
               </div>
 
               <figure className="relative grid gap-3" aria-label="Example: a request and Auctra's confirmation">
-                <div className="ml-auto max-w-[85%] rounded-[20px] rounded-br-[6px] bg-cloud px-4 py-2.5 text-[0.9375rem] font-medium text-obsidian">
+                <div style={delay(380)} className="rise ml-auto max-w-[85%] rounded-[20px] rounded-br-[6px] bg-cloud px-4 py-2.5 text-[0.9375rem] font-medium text-obsidian">
                   Save 20 USDC to my savings wallet every Friday at 6 PM.
                 </div>
-                <div className="rotate-[-1.2deg] rounded-[var(--radius-surface)] bg-cloud p-1.5 text-ink shadow-[8px_8px_0_0_var(--color-signal)] transition-transform duration-300 hover:rotate-0">
+                <div style={delay(620)} className="rise rotate-[-1.2deg] rounded-[var(--radius-surface)] bg-cloud p-1.5 text-ink shadow-[8px_8px_0_0_var(--color-signal)] transition-transform duration-300 hover:rotate-0">
                   <ConfirmationCard preview={EXAMPLE} />
                 </div>
               </figure>
@@ -134,14 +138,14 @@ export default function Home() {
       {/* How it works */}
       <section id="how" aria-labelledby="how-heading" className="bg-ledger scroll-mt-4">
         <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
-          <h2 id="how-heading" className="text-h1 max-w-[18ch] sm:text-[2.75rem]">
+          <h2 id="how-heading" className="reveal text-h1 max-w-[18ch] sm:text-[2.75rem]">
             Three steps. <span className="accent-italic">Then never again.</span>
           </h2>
           <ol className="mt-12 grid gap-5 md:grid-cols-3">
             {STEPS.map((step, index) => (
               <li
                 key={step.title}
-                className="group relative rounded-[var(--radius-surface)] border-2 border-obsidian bg-surface p-6 shadow-pop transition-transform duration-200 hover:-translate-y-1"
+                className="reveal group relative rounded-[var(--radius-surface)] border-2 border-obsidian bg-surface p-6 shadow-pop transition-transform duration-200 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-obsidian px-3 py-1 text-xs font-semibold tracking-wide text-cloud uppercase">{step.tag}</span>
@@ -161,14 +165,14 @@ export default function Home() {
       <section id="use-cases" aria-labelledby="use-cases-heading" className="scroll-mt-4 bg-surface">
         <div className="mx-auto max-w-[78rem] px-4 py-20 sm:px-6 lg:px-10 lg:py-28">
           <p className="text-meta">Use cases</p>
-          <h2 id="use-cases-heading" className="text-h1 mt-3 max-w-[22ch] sm:text-[2.75rem]">
+          <h2 id="use-cases-heading" className="reveal text-h1 mt-3 max-w-[22ch] sm:text-[2.75rem]">
             For you. <span className="accent-italic">And your business.</span>
           </h2>
           <div className="mt-12 grid gap-6 md:grid-cols-2">
             {USE_CASES.map((useCase) => (
               <article
                 key={useCase.who}
-                className={`relative overflow-hidden rounded-[var(--radius-surface)] p-7 sm:p-9 ${
+                className={`reveal relative overflow-hidden rounded-[var(--radius-surface)] p-7 sm:p-9 ${
                   useCase.tone === "signal" ? "bg-signal text-obsidian" : "bg-obsidian text-cloud"
                 }`}
               >
@@ -198,7 +202,7 @@ export default function Home() {
       {/* Safety */}
       <section id="safety" aria-labelledby="safety-heading" className="scroll-mt-4">
         <div className="mx-auto grid max-w-[78rem] gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-10 lg:py-28">
-          <div className="grid content-start gap-5">
+          <div className="reveal grid content-start gap-5">
             <span className="grid size-12 place-items-center rounded-2xl bg-obsidian text-2xl text-cloud [--icon-dot:var(--color-signal)]">
               <IconShield />
             </span>
@@ -218,7 +222,7 @@ export default function Home() {
             </div>
           </div>
 
-          <figure aria-label="Example run receipts" className="self-center">
+          <figure aria-label="Example run receipts" className="reveal self-center">
             <div className="rounded-[var(--radius-surface)] border-2 border-obsidian bg-surface p-5 shadow-pop sm:p-7">
               <div className="flex items-center justify-between border-b border-dashed border-line pb-4">
                 <p className="font-display text-xl font-medium">This week&apos;s receipts</p>
@@ -243,7 +247,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="px-4 pb-20 sm:px-6 lg:px-10">
-        <div className="relative mx-auto max-w-[78rem] overflow-hidden rounded-[32px] bg-signal px-6 py-14 text-obsidian sm:px-12 sm:py-20">
+        <div className="reveal relative mx-auto max-w-[78rem] overflow-hidden rounded-[32px] bg-signal px-6 py-14 text-obsidian sm:px-12 sm:py-20">
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -bottom-24 size-80 rounded-full border-[40px] border-obsidian/10" />
           <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between">
             <h2 className="max-w-[16ch] font-display text-[clamp(2.25rem,1.5rem+3vw,4rem)] leading-[1] font-medium tracking-[-0.03em] [font-variation-settings:'SOFT'_100,'WONK'_1]">
