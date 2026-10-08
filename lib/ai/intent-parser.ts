@@ -9,7 +9,9 @@ import { UserFacingError } from "../services/errors";
 // resolves addresses, and never executes. Fields the user didn't state stay
 // null, and deterministic code below turns gaps into clarifying questions.
 
-export const DEFAULT_INTENT_MODEL = "claude-opus-5-5";
+// Reading one short request is a small extraction job, so the smallest model is
+// plenty and keeps each request well under a cent.
+export const DEFAULT_INTENT_MODEL = "claude-haiku-4-5";
 
 export const extractionSchema = z.object({
   outcome: z.enum(["TRANSFER_REQUEST", "SET_BALANCE_FLOOR", "UNSUPPORTED", "NOT_A_REQUEST"]),
@@ -69,10 +71,12 @@ export function createClaudeIntentModel(options: { apiKey?: string; model?: stri
       throw new UserFacingError("AI_UNAVAILABLE", AI_UNAVAILABLE_MESSAGE);
     }
     client ??= new Anthropic({ apiKey, ...(options.fetch ? { fetch: options.fetch, maxRetries: 0 } : {}) });
+    // Haiku takes neither effort levels nor server-side fallbacks; larger models get both.
+    const small = model.startsWith("claude-haiku");
     const request = {
       model,
       max_tokens: 2048,
-      output_config: { effort: "low" as const, format: betaZodOutputFormat(extractionSchema) },
+      output_config: { ...(small ? {} : { effort: "low" as const }), format: betaZodOutputFormat(extractionSchema) },
       // Stable system prompt first for caching; per-request data goes in the user turn.
       system: SYSTEM_PROMPT,
       messages: [
@@ -86,8 +90,11 @@ export function createClaudeIntentModel(options: { apiKey?: string; model?: stri
     let response;
     try {
       try {
-        response = await client.beta.messages.parse({ ...request, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
+        response = small
+          ? await client.beta.messages.parse(request)
+          : await client.beta.messages.parse({ ...request, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
       } catch (error) {
+        if (small) throw error;
         // If the account can't use server-side fallbacks, ask once more without them.
         if (!(error instanceof Anthropic.BadRequestError)) throw error;
         logModelError("retrying without fallbacks", error);
