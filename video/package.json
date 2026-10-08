@@ -1,0 +1,25 @@
+{
+  "name": "auctra-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audio": "tsx src/audio/build.ts",
+    "studio": "remotion studio src/index.ts",
+    "render": "npm run audio && remotion render src/index.ts Landscape out/auctra-demo-1920x1080.mp4 && remotion render src/index.ts Portrait out/auctra-demo-1080x1920.mp4"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@remotion/cli": "^4.0.534",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.534"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

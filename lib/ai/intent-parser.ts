@@ -110,7 +110,10 @@ export function createClaudeIntentModel(options: { apiKey?: string; model?: stri
 // Status, type and message only: enough to fix configuration from the Vercel log, never the user's text.
 function logModelError(stage: string, error: unknown) {
   if (error instanceof Anthropic.APIError) {
-    console.error(`Intent model ${stage}: ${error.status ?? "no status"} ${error.name}: ${error.message}`);
+    // Plain text, not JSON: Vercel folds JSON in a log line into a collapsed object, hiding the reason.
+    const body = (error.error as { error?: { type?: unknown; message?: unknown } } | undefined)?.error;
+    const reason = typeof body?.message === "string" ? `${String(body.type ?? "error")} - ${body.message}` : "no reason given";
+    console.error(`Intent model ${stage}: status ${error.status ?? "none"}, ${reason}, request ${error.requestID ?? "unknown"}`);
   } else {
     console.error(`Intent model ${stage}:`, error instanceof Error ? `${error.name}: ${error.message}` : error);
   }
@@ -141,7 +144,7 @@ export function toFinancialIntent(extraction: Extraction): ParseResult {
     return { kind: "clarify", question: "Should I send to the saved destination name or to the address you typed? Please give just one." };
   }
   if (!extraction.destinationLabel && !extraction.destinationAddress) {
-    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations." };
+    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations from Profile." };
   }
   if (!extraction.frequency) {
     return { kind: "clarify", question: "When should it run: once, every day, every week, or every month?" };
@@ -203,7 +206,7 @@ export async function parseIntent(
   // An address must come from the user, never from the model.
   const address = checked.data.destinationAddress;
   if (address && !input.message.toLowerCase().includes(address.toLowerCase())) {
-    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations." };
+    return { kind: "clarify", question: "Who should receive it? Name one of your saved destinations from Profile." };
   }
   return toFinancialIntent(checked.data);
 }
