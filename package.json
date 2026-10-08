@@ -2,6 +2,7 @@
   "name": "auctra",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "if [ -n \"$VERCEL\" ] && [ -n \"$DATABASE_URL\" ]; then drizzle-kit migrate; fi && next build",
