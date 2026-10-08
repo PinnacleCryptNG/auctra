@@ -2,7 +2,7 @@
 
 import { useCreateWallet, usePrivy, useSigners, useWallets } from "@privy-io/react-auth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, Suspense, useCallback, useEffect, useRef, useState, ViewTransition } from "react";
 import { DestinationForm } from "@/components/auctra/destination-form";
 import { StatusScreen } from "@/components/auctra/status-screen";
 import { Logo } from "@/components/auctra/logo";
@@ -121,8 +121,20 @@ function Onboarding() {
   const refresh = useCallback(async () => {
     try {
       const next = await request<Me>("/api/me");
-      setMe(next);
-      if (next.wallet) setDestinations((await request<{ destinations: Destination[] }>("/api/destinations")).destinations);
+      const saved = next.wallet
+        ? await request<{ destinations: Destination[] }>("/api/destinations").then(
+            (body) => body.destinations,
+            (e) => {
+              setError(friendlyError(e, "Couldn't load your setup"));
+              return null;
+            }
+          )
+        : null;
+      // A transition, so moving to the next step plays the screen animation.
+      startTransition(() => {
+        setMe(next);
+        if (saved) setDestinations(saved);
+      });
     } catch (e) {
       setError(friendlyError(e, "Couldn't load your setup"));
     }
@@ -177,12 +189,15 @@ function Onboarding() {
   const step = !me?.account ? 0 : !me.wallet ? 1 : destinations.length === 0 ? 2 : me.wallet.permission !== "VERIFIED" ? 3 : 4;
   const inSetup = Boolean(me?.linked) && step < 4;
   const shown = inSetup && viewing !== null && viewing < step ? viewing : step;
-  const forward = () => setViewing(shown + 1 < step ? shown + 1 : null);
+  const forward = () => startTransition(() => setViewing(shown + 1 < step ? shown + 1 : null));
 
   return (
-    <Shell step={inSetup ? shown : null} reached={inSetup ? step : null} onBack={inSetup && shown > 0 ? () => setViewing(shown - 1) : undefined}>
+    <Shell step={inSetup ? shown : null} reached={inSetup ? step : null} onBack={inSetup && shown > 0 ? () => startTransition(() => setViewing(shown - 1)) : undefined}>
       <div className="grid gap-4">
         {error && <Notice tone="danger" title={error.title}>{error.description}</Notice>}
+        {/* Each setup step is its own screen: it rises in as the last one fades out. */}
+        <ViewTransition key={`${Boolean(me)}-${shown}`} enter="screen-in" exit="screen-out" default="none">
+        <div className="grid gap-4">
         {!me ? (
           <LoadingState label="Loading your setup…" rows={0} />
         ) : !me.linked ? (
@@ -209,6 +224,8 @@ function Onboarding() {
         ) : (
           <DoneStep me={me} />
         )}
+        </div>
+        </ViewTransition>
       </div>
     </Shell>
   );

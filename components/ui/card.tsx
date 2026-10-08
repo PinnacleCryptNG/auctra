@@ -4,7 +4,7 @@ export function Card({ className = "", children, ...props }: HTMLAttributes<HTML
   return (
     <section
       {...props}
-      className={`min-w-0 rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)] ${className}`}
+      className={`reveal min-w-0 rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)] ${className}`}
     >
       {children}
     </section>

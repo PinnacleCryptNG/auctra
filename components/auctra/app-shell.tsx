@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { ViewTransition, type ReactNode } from "react";
 import { Address, Button, IconActivity, IconHome, IconLogout, IconPlus, IconRepeat, IconSettings } from "@/components/ui";
 import { useAuctra } from "@/lib/client/auctra-data";
 import { CreateAutomationDialog } from "./create-automation";
@@ -100,7 +100,10 @@ export function AppShell({ children, onSignOut }: { children: ReactNode; onSignO
         </header>
 
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[72rem] flex-1 px-4 pt-5 pb-28 focus:outline-none sm:px-6 sm:pt-7 lg:px-10 lg:pt-10 lg:pb-12">
-          {children}
+          {/* Each tab is a new screen: the old one fades out, the new one rises in. */}
+          <ViewTransition key={pathname} enter="screen-in" exit="screen-out" default="none">
+            <div>{children}</div>
+          </ViewTransition>
         </main>
 
         {/* Mobile / tablet bottom navigation */}
